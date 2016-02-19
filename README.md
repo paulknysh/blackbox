@@ -1,0 +1,7 @@
+# Optimization of expensive black-box functions on multi-core processors
+
+Often times there is a need to find optimal parameters of complex object or process (geometry, chemical composition, operating conditions etc). It's not always easy or even possible to come up with a good analytical approach that solves the problem. Instead we can perform trial-and-error search using computer simulation. Performing such a search manually might be very tedious and inefficient, if feasible at all.
+
+One can build a code interface (function/procedure) that has input --- list of trial values, and output --- some scalar function that represents cost/error and automatically calculated every time simulation is performed. From this point of view we are dealing with mathematical optimization. The problem however is that function doesn't have analytical form and, what is more crucial, is usually expensive (it can take many hours to evaluate it at a single point), and therefore called expensive black-box function.
+
+Proposed here procedure allows to perform efficient optimization of expensive black-box functions using specialized methods. This procedure is designed to scale on multi-core CPUs (Intel Xeon Phi family carries up to 60 cores, Feb 2016). Resulting speedup is equal to a number of cores, which is achieved by always keeping every available core running its own independent function evaluation.
