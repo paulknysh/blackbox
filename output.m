@@ -1,8 +1,7 @@
 (*importing output data*)
 pts = Import["C:\\...\\output.csv"];
 
-(*space rescaling parameters (better if match ones used in blackbox \
-code)*)
+(*space rescaling parameters*)
 nrand = 10000;
 vf = 0.05;
 
