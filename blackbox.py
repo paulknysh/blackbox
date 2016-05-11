@@ -21,6 +21,8 @@ box - list of ranges for each variable (numpy array)
 cores - number of cores available
 n - number of initial function calls
 it - number of subsequent function calls
+
+search parameters (default values are set):
 tratio - fraction of initially sampled points to select threshold
 rho0 - initial "balls density"
 p - rate of "balls density" decay (p=1 - linear, p>1 - faster, 0<p<1 - slower)
@@ -32,7 +34,7 @@ output:
 
 '''
 
-def search(f,resfile,box,cores,n,it,tratio,rho0,p,nrand,vf):
+def search(f,resfile,box,cores,n,it,tratio=0.75,rho0=0.75,p=0.75,nrand=10000,vf=0.05):
 
 	# space size
 	d=len(box)
@@ -296,55 +298,3 @@ def pmap(f,batch,n):
 	pool.join()
 
 	return res
-
-
-
-
-
-
-
-
-
-
-'''
-# Example of usage in a main program:
-
-
-
-
-from blackbox import *
-
-
-
-
-def f(var):
-
-	# perfroming expensive simulation
-	# ...
-
-	return ...
-
-
-
-
-if __name__ == '__main__':
-
-	search(f,'output.csv',
-
-			box=np.array([[-1.,1.],[-1.,1.]]),
-
-			cores=4,
-
-			n=16,
-			it=16,
-			tratio=0.75,
-
-			rho0=0.75,
-			p=0.75,
-
-			nrand=10000,
-
-			vf=0.05
-
-		)
-'''
