@@ -61,7 +61,7 @@ Iterations are saved in .csv file with the following structure:
 
 1st variable | 2nd variable | ... | n-th variable | Function value
 --- | --- | --- | --- | ---
-0.172 | 0.467 | ... | 0.205 | 0.057
+0.172 | 0.467 | ... | 0.205 | 0.107
 0.164 | 0.475 | ... | 0.216 | 0.042
 ... | ... | ... | ... | ...
 
