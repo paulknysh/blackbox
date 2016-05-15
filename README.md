@@ -4,7 +4,7 @@
 
 Let's say you are an engineer/scientist who works with numerical simulations. Oftentimes you need to find optimal parameters of a given design/model. If you can construct a simple Python function, that takes a set of trial parameters, performs simulation, and outputs some scalar measure (of how good your design/model is), then the problem becomes a mathematical optimization, that can and should be automated. However, a corresponding function has no analytical expression (black-box) and is usually computationally expensive, which makes it challenging to deal with for common methods.
 
-**blackbox** is a minimalistic and easy-to-use Python module that efficiently searches for a global optimum of an expensive black-box function. It works based on a given (often limited) number of function calls and makes an efficient use of them (whether it's 10 function calls or 100) to find the best solution it can. It scales on multicore CPUs by performing several function evaluations in parallel, which results in a speedup equal to a number of cores available.
+**blackbox** is a minimalistic and easy-to-use Python module that efficiently searches for a global optimum (minimum) of an expensive black-box function. It works based on a given (often limited) number of function calls and makes an efficient use of them (whether it's 10 function calls or 100) to find the best solution it can. It scales on multicore CPUs by performing several function evaluations in parallel, which results in a speedup equal to a number of cores available.
 
 Code is multidimensional and currently handles only box-constrained search regions - each variable has its own independent range. A mathematical method behind the code is described in this [**arXiv note**](http://arxiv.org/pdf/1605.00998.pdf).
 
@@ -23,11 +23,11 @@ def fun(par):
   
   return output
 ```
-Here `par` is a vector of parameters (a Python list is OK) and `output` is a scalar measure of interest.
+Here `par` is a vector of parameters (a Python list is OK) and `output` is a **non-negative** scalar measure of interest.
 
 ## How do I run the procedure?
 
-Just like that:
+Just like that (**minimizing** a given function):
 ```python
 from blackbox import *
 
@@ -49,8 +49,8 @@ if __name__ == '__main__':
 
     cores=4, # number of cores to be used
 
-    n=16, # number of function calls on initial stage (global search)
-    it=16 # number of function calls on subsequent stage (local search)
+    n=8, # number of function calls on initial stage (global search)
+    it=8 # number of function calls on subsequent stage (local search)
     
     )
 ```
