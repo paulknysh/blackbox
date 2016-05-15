@@ -72,7 +72,3 @@ Data from .csv file can be postprocessed and visualized using provided Mathemati
 ## Author
 
 Paul Knysh (paul.knysh@gmail.com)
-
-## License
-
-MIT
