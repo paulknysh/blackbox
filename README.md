@@ -42,16 +42,16 @@ if __name__ == '__main__':
   search(
   
     f=fun, # given function
-	
-    resfile='output.csv', # .csv file where iterations will be saved
-
-    box=[[-1.,1.],[-1.,1.]], # range of values for each parameter
-
-    cores=4, # number of cores to be used
-
-    n=8, # number of function calls on initial stage (global search)
-    it=8 # number of function calls on subsequent stage (local search)
     
+    box=[[-1.,1.],[-1.,1.]], # range of values for each parameter
+    
+    n=8, # number of function calls on initial stage (global search)
+    it=8, # number of function calls on subsequent stage (local search)
+    
+    cores=4, # number of cores to be used
+    
+    resfile='output.csv' # .csv file where iterations will be saved
+
     )
 ```
 
