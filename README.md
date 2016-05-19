@@ -45,7 +45,7 @@ if __name__ == '__main__':
 	
     resfile='output.csv', # .csv file where iterations will be saved
 
-    box=np.array([[-1.,1.],[-1.,1.]]), # range of values for each parameter
+    box=[[-1.,1.],[-1.,1.]], # range of values for each parameter
 
     cores=4, # number of cores to be used
 
