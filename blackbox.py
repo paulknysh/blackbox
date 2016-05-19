@@ -50,7 +50,7 @@ def search(f,resfile,box,cores,n,it,tratio=0.75,rho0=0.75,p=0.75,nrand=10000,vf=
 	def cubetobox(pt):
 		res=np.zeros(d)
 		for i in range(d):
-			res[i]=box[i,0]+(box[i,1]-box[i,0])*pt[i]
+			res[i]=box[i][0]+(box[i][1]-box[i][0])*pt[i]
 		return res
 
 	# generating latin hypercube
