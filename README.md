@@ -14,11 +14,11 @@ It simply needs to be wrapped into a Python function. An external application ca
 ```python
 def fun(par):
 
-  # modifying text file that contains design/model parameters
+  # setting parameters
   ...
-  # performing simulation in external package
+  # running external application
   os.system(...)
-  # reading results, calculating output
+  # calculating output
   ...
   
   return output
@@ -54,6 +54,7 @@ if __name__ == '__main__':
 
     )
 ```
+`n` must be greater than number of parameters and `it` must be greater than 1. Both `n` and `it` are expected to be divisible by `cores` (if not, code will adjust them automatically).
 
 ## How about results?
 
