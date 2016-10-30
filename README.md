@@ -29,7 +29,7 @@ Here `par` is a vector of parameters (a Python list is OK) and `output` is a **n
 
 Just like that (minimizing a function):
 ```python
-from blackbox import *
+import blackbox as bb
 
 
 def fun(par):
@@ -39,7 +39,7 @@ def fun(par):
 
 if __name__ == '__main__':
 
-  search(
+  bb.search(
   
     f=fun, # given function
     
