@@ -1,5 +1,5 @@
 (*importing output data*)
-pts = Import["C:\\...\\output.csv"];
+pts = Import["...\\output.csv"];
 
 (*space rescaling parameters*)
 nrand = 10000;
