@@ -3,154 +3,131 @@ import multiprocessing as mp
 import csv
 
 
+def search(f, resfile, box, cores, n, it, tratio=0.75, rho0=0.75, p=0.75, nrand=10000, vf=0.05):
+    """ Minimize (maximizes, if applied on 1/(f+1) or so) given positive expensive black-box function
+    and write iterations to .csv file.
+
+    Parameters
+    ----------
+    f : func
+        Black-box function
+    resfile : str
+	Name of .csv file to save iterations
+    box : array_like
+	List of ranges for each variable
+    cores : int
+        Number of cores available
+    n : int
+        Number of initial function calls
+    it : int
+        Number of subsequent function calls
+    tratio : scalar, optional
+        Fraction of initially sampled points to select threshold
+    rho0 : scalar, optional
+        Initial "balls density"
+    p : scalar, optional
+    	Rate of "balls density" decay (p=1 - linear, p>1 - faster, 0<p<1 - slower)
+    nrand : int, optional
+    	Number of random samples that are used to cover space for fit minimizing and rescaling
+    vf : scalar
+    	Fraction of nrand that is used for rescaling
+    """
+
+    # space size
+    d = len(box)
+
+    # adjust the number of iterations to the number of cores
+    if n % cores:
+        n = n - n % cores + cores
+
+    if it % cores:
+        it = it - it % cores + cores
 
 
+    # scales a given point from a unit cube to box
+    def cubetobox(pt):
+        res = np.zeros(d)
+	for i in range(d):
+            res[i] = box[i][0] + (box[i][1] - box[i][0]) * pt[i]
+	return res
 
+    # generating latin hypercube
+    pts = np.zeros((n, d+1))
+    lh = latin(n, d)
 
-
-
-
-
-'''
-minimizes (maximizes, if applied on 1/(f+1) or so) given positive expensive black-box function, saves iterations into result file
-
-input:
-f - name of function
-resfile - name of .csv file to save iterations
-box - list of ranges for each variable (numpy array)
-cores - number of cores available
-n - number of initial function calls
-it - number of subsequent function calls
-
-search parameters (default values are set):
-tratio - fraction of initially sampled points to select threshold
-rho0 - initial "balls density"
-p - rate of "balls density" decay (p=1 - linear, p>1 - faster, 0<p<1 - slower)
-nrand - number of random samples that are used to cover space for fit minimizing and rescaling
-vf - fraction of nrand that is used for rescaling
-
-output:
-.csv file with iterations is created in the same directory
-
-'''
-
-def search(f,resfile,box,cores,n,it,tratio=0.75,rho0=0.75,p=0.75,nrand=10000,vf=0.05):
-
-	# space size
-	d=len(box)
-
-	# adjusting the number of iterations to the number of cores
-	if np.mod(n,cores)!=0:
-		n=n-np.mod(n,cores)+cores
-
-	if np.mod(it,cores)!=0:
-		it=it-np.mod(it,cores)+cores
-
-	# scales a given point from a unit cube to box
-	def cubetobox(pt):
-		res=np.zeros(d)
-		for i in range(d):
-			res[i]=box[i][0]+(box[i][1]-box[i][0])*pt[i]
-		return res
-
-	# generating latin hypercube
-	pts=np.zeros((n,d+1))
-	lh=latin(n,d)
-
-	for i in range(n):
-		for j in range(d):
-			pts[i,j]=lh[i,j]
+    for i in range(n):
+        for j in range(d):
+            pts[i, j] = lh[i, j]
 	
-	# initial sampling
-	for i in range(n/cores):
-		pts[cores*i:cores*(i+1),-1]=pmap(f,map(cubetobox,pts[cores*i:cores*(i+1),0:-1]),cores)
+    # initial sampling
+    for i in range(n/cores):
+        pts[cores*i:cores*(i+1), -1] = pmap(f, map(cubetobox, pts[cores*i:cores*(i+1), 0: -1]), cores)
 
-	# selecting threshold, rescaling function
-	t=pts[pts[:,-1].argsort()][np.ceil(tratio*n)-1,-1]
-	
-	def fscale(fval):
-		if fval<t:
-			return fval/t
-		else:
-			return 1.
-
-	for i in range(n):
-		pts[i,-1]=fscale(pts[i,-1])
-
-	# volume of d-dimensional ball (r=1)
-	if np.mod(d,2)==0:
-		v1=np.pi**(d/2)/np.math.factorial(d/2)
-	else:
-		v1=2*(4*np.pi)**((d-1)/2)*np.math.factorial((d-1)/2)/np.math.factorial(d)
+    # selecting threshold, rescaling function
+    t=pts[pts[:, -1].argsort()][np.ceil(tratio*n)-1, -1]
 
 
-	# iterations (current iteration m is equal to h*cores+i)
-	T=np.identity(d)
+    def fscale(fval):
+        if fval < t:
+            return fval/t
+        else:
+            return 1.
 
-	for h in range(it/cores):
+    for i in range(n):
+        pts[i, -1] = fscale(pts[i, -1])
 
-		# refining scaling matrix T
-		if d>1:
+    # volume of d-dimensional ball (r = 1)
+    if not d % 2:
+        v1 = np.pi**(d/2)/np.math.factorial(d/2)
+    else:
+        v1 = 2*(4*np.pi)**((d-1)/2)*np.math.factorial((d-1)/2)/np.math.factorial(d)
 
-			pcafit=rbf(pts,np.identity(d))
+    # iterations (current iteration m is equal to h*cores+i)
+    T = np.identity(d)
 
-			cover=np.zeros((nrand,d+1))
-			cover[:,0:-1]=np.random.rand(nrand,d)
-			for i in range(nrand):
-				cover[i,-1]=pcafit(cover[i,0:-1])
-
-			cloud=cover[cover[:,-1].argsort()][0:np.ceil(vf*nrand),0:-1]
-
-			eigval,eigvec=np.linalg.eig(np.cov(np.transpose(cloud)))
-
-			T=np.zeros((d,d))
-			for i in range(d):
-				T[i]=eigvec[:,i]/np.sqrt(eigval[i])
-			T=T/np.linalg.norm(T)
+    for h in range(it/cores):
+        # refining scaling matrix T
+        if d > 1:
+            pcafit = rbf(pts, np.identity(d))
+            cover = np.zeros((nrand, d+1))
+            cover[:, 0:-1] = np.random.rand(nrand, d)
+            for i in range(nrand):
+                cover[i, -1] = pcafit(cover[i, 0: -1])
+                cloud = cover[cover[:, -1].argsort()][0:np.ceil(vf*nrand), 0:-1]
+                eigval, eigvec = np.linalg.eig(np.cov(np.transpose(cloud)))
+                T = np.zeros((d, d))
+                for i in range(d):
+                    T[i] = eigvec[:, i]/np.sqrt(eigval[i])
+                    T = T/np.linalg.norm(T)
 		
+        # sampling next batch of points
+        fit = rbf(pts,T)
+        pts = np.append(pts, np.zeros((cores, d+1)), axis=0)
+            for i in range(cores):
+                r = ((rho0*((it-1.-(h*cores+i))/(it-1.))**p)/(v1*(n+(h*cores+i))))**(1./d)
+                fitmin = 1.
+                for j in range(nrand):
+                    x = np.random.rand(d)
+		    ok = True
+                    if fit(x)<fitmin:
+                        for k in range(n+h*cores+i):
+                            if np.linalg.norm(np.subtract(x, pts[k, 0:-1])) < r:
+                                ok = False
+			        break
+                            else:
+                                ok = False
+                            if ok:
+                                pts[n+h*cores+i, 0:-1] = np.copy(x)
+                                fitmin = fit(x)
 
-		# sampling next batch of points
-		fit=rbf(pts,T)
+		pts[n+cores*h:n+cores*(h+1), -1] = map(fscale, pmap(f, map(cubetobox, pts[n+cores*h:n+cores*(h+1), 0:-1]), cores))
 
-		pts=np.append(pts,np.zeros((cores,d+1)),axis=0)
-
-		for i in range(cores):
-
-			r=((rho0*((it-1.-(h*cores+i))/(it-1.))**p)/(v1*(n+(h*cores+i))))**(1./d)
-			
-			fitmin=1.
-			for j in range(nrand):
-
-				x=np.random.rand(d)
-				ok=True
-
-				if fit(x)<fitmin:
-
-					for k in range(n+h*cores+i):
-						if np.linalg.norm(np.subtract(x,pts[k,0:-1]))<r:
-							ok=False
-							break
-				else:
-					ok=False
-
-				if ok==True:
-					pts[n+h*cores+i,0:-1]=np.copy(x)
-					fitmin=fit(x)
-
-		pts[n+cores*h:n+cores*(h+1),-1]=map(fscale,pmap(f,map(cubetobox,pts[n+cores*h:n+cores*(h+1),0:-1]),cores))
-
-
-	# saving result into external file
-	extfile = open(resfile,'wb')
-	wr = csv.writer(extfile, dialect='excel')
-	for item in pts:
-	    wr.writerow(item)
-
-
-
-
-
-
+ 
+    # saving result into external file
+    extfile = open(resfile, 'wb')
+    wr = csv.writer(extfile, dialect='excel')
+    for item in pts:
+        wr.writerow(item)
 
 
 
