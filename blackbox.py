@@ -13,28 +13,28 @@ def search(f, resfile, box, cores, n, it,
     Parameters
     ----------
     f : callable
-        The objective function to be minimized
+        The objective function to be minimized.
     resfile : str
-        Name of .csv file to save iterations
+        Name of .csv file to save iterations.
     box : array_like
-        List of ranges for each variable
+        List of ranges for each variable.
     cores : int
-        Number of cores available
+        Number of cores available.
     n : int
-        Number of initial function calls
+        Number of initial function calls.
     it : int
-        Number of subsequent function calls
-    tratio : scalar, optional
-        Fraction of initially sampled points to select threshold
-    rho0 : scalar, optional
-        Initial "balls density"
-    p : scalar, optional
+        Number of subsequent function calls.
+    tratio : float, optional
+        Fraction of initially sampled points to select threshold.
+    rho0 : float, optional
+        Initial "balls density."
+    p : float, optional
         Rate of "balls density" decay (p=1 - linear, p>1 - faster, 0<p<1 - slower).
     nrand : int, optional
         Number of random samples that are used to cover space for fit
         minimizing and rescaling.
-    vf : scalar
-        Fraction of nrand that is used for rescaling
+    vf : float
+        Fraction of nrand that is used for rescaling.
     """
     # space size
     d = len(box)
@@ -193,9 +193,9 @@ def rbf(pts, T):
     Parameters
     ----------
     pts : list
-        List of multi-d points with corresponding values [[x1, x2, .., xd, val], ...]
+        List of multi-d points with corresponding values [[x1, x2, .., xd, val], ...].
     T : ndarray
-        Scaling matrix
+        Scaling matrix.
 
     Returns
     -------
@@ -252,7 +252,7 @@ def pmap(f, batch, n):
     Parameters
     ----------
     f : callable
-       Function
+       Function.
     batch : list
        List of arguments.
     n : int
