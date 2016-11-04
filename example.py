@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+"""Example from arXiv note (https://arxiv.org/pdf/1605.00998.pdf)"""
 import blackbox as bb
 
 def fun(par):
