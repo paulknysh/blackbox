@@ -38,12 +38,12 @@ def fun(par):
 
 
 def main():
-    bb.search(f=fun, # given function
-              box=[[-10.,10.],[-10.,10.]], # range of values for each parameter
-              n=8, # number of function calls on initial stage (global search)
-              it=8, # number of function calls on subsequent stage (local search)
-              cores=4, # number of cores to be used
-              resfile='output.csv') # .csv file where iterations will be saved
+    bb.search(f=fun,  # given function
+              box=[[-10., 10.], [-10., 10.]],  # range of values for each parameter
+              n=8,  # number of function calls on initial stage (global search)
+              it=8,  # number of function calls on subsequent stage (local search)
+              cores=4,  # number of cores to be used
+              resfile='output.csv')  # .csv file where iterations will be saved
 
 
 if __name__ == '__main__':
