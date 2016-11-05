@@ -14,14 +14,14 @@ It simply needs to be wrapped into a Python function. An external application ca
 ```python
 def fun(par):
 
-  # setting parameters
-  ...
-  # running external application
-  os.system(...)
-  # calculating output
-  ...
-  
-  return output
+    # setting parameters
+    ...
+    # running external application
+    os.system(...)
+    # calculating output
+    ...
+    
+    return output
 ```
 Here `par` is a vector of parameters (a Python list is OK) and `output` is a **non-negative** scalar measure to be **minimized**.
 
@@ -33,26 +33,21 @@ import blackbox as bb
 
 
 def fun(par):
-  ...
-  return output
+    ...
+    return output
+
+
+def main():
+    bb.search(f=fun, # given function
+              box=[[-10.,10.],[-10.,10.]], # range of values for each parameter
+              n=8, # number of function calls on initial stage (global search)
+              it=8, # number of function calls on subsequent stage (local search)
+              cores=4, # number of cores to be used
+              resfile='output.csv') # .csv file where iterations will be saved
 
 
 if __name__ == '__main__':
-
-  bb.search(
-  
-    f=fun, # given function
-    
-    box=[[-1.,1.],[-1.,1.]], # range of values for each parameter
-    
-    n=8, # number of function calls on initial stage (global search)
-    it=8, # number of function calls on subsequent stage (local search)
-    
-    cores=4, # number of cores to be used
-    
-    resfile='output.csv' # .csv file where iterations will be saved
-
-    )
+    main()
 ```
 `n` must be greater than number of parameters and `it` must be greater than 1. Both `n` and `it` are expected to be divisible by `cores` (if not, code will adjust them automatically).
 
