@@ -136,7 +136,8 @@ def search(f, resfile, box, cores, n, it,
 
 
 def latin(n, d):
-    """Build latin hypercube.
+    """
+    Build latin hypercube.
 
     Parameters
     ----------
@@ -262,7 +263,6 @@ def pmap(f, batch, n):
     -------
     res : list
         List of corresponding values
-
     """
     pool = mp.Pool(processes=n)
     res = pool.map(f, batch)
