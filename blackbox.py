@@ -3,7 +3,7 @@ import multiprocessing as mp
 import csv
 
 
-def search(f, resfile, box, cores, n, it,
+def search(f, box, n, it, cores, resfile,
            tratio=0.75, rho0=0.75, p=0.75,
            nrand=10000, vf=0.05):
     """
@@ -14,26 +14,26 @@ def search(f, resfile, box, cores, n, it,
     ----------
     f : callable
         The objective function to be minimized.
-    resfile : str
-        Name of .csv file to save iterations.
-    box : array_like
-        List of ranges for each variable.
-    cores : int
-        Number of cores available.
+    box : list of lists
+        List of ranges for each parameter.
     n : int
         Number of initial function calls.
     it : int
         Number of subsequent function calls.
+    cores : int
+        Number of cores available.
+    resfile : str
+        Name of .csv file to save iterations.
     tratio : float, optional
         Fraction of initially sampled points to select threshold.
     rho0 : float, optional
-        Initial "balls density."
+        Initial "balls density".
     p : float, optional
         Rate of "balls density" decay (p=1 - linear, p>1 - faster, 0<p<1 - slower).
     nrand : int, optional
         Number of random samples that are used to cover space for fit
         minimizing and rescaling.
-    vf : float
+    vf : float, optional
         Fraction of nrand that is used for rescaling.
     """
     # space size
@@ -148,8 +148,8 @@ def latin(n, d):
 
     Returns
     -------
-    pts : list
-        List of points uniformly placed in d-dimensional unit cube.
+    pts : ndarray
+        Array of points uniformly placed in d-dimensional unit cube.
     """
     # starting with diagonal shape
     pts = np.ones((n, d))
@@ -193,15 +193,15 @@ def rbf(pts, T):
 
     Parameters
     ----------
-    pts : list
-        List of multi-d points with corresponding values [[x1, x2, .., xd, val], ...].
+    pts : ndarray
+        Array of multi-d points with corresponding values [[x1, x2, .., xd, val], ...].
     T : ndarray
         Scaling matrix.
 
     Returns
     -------
     fit : callable
-        Function that returns the value of the RBF-fit at a given point
+        Function that returns the value of the RBF-fit at a given point.
     """
     n = len(pts)
     d = len(pts[0])-1
@@ -262,7 +262,7 @@ def pmap(f, batch, n):
     Returns
     -------
     res : list
-        List of corresponding values
+        List of corresponding values.
     """
     pool = mp.Pool(processes=n)
     res = pool.map(f, batch)
