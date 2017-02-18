@@ -63,8 +63,6 @@ Iterations are saved in .csv file with the following structure:
 
 **Important**: For a number of reasons all parameters (as well as a function value) are normalized into range [0,1]. If a given parameter has range [a,b], then 0 corresponds to a and 1 corresponds to b. Simple linear rescaling can be applied to obtain an absolute value needed.
 
-Data from .csv file can be visualized using provided Mathematica script `output.m`.
-
 ## Author
 
 Paul Knysh (paul.knysh@gmail.com)
