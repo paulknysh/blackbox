@@ -1,6 +1,5 @@
 import numpy as np
 import multiprocessing as mp
-import csv
 
 
 def search(f, box, n, it, cores, resfile,
@@ -62,13 +61,13 @@ def search(f, box, n, it, cores, resfile,
             pts[i, j] = lh[i, j]
 
     # initial sampling
-    for i in range(n/cores):
+    for i in range(n//cores):
         pts[cores*i:cores*(i+1), -1] = pmap(f,
-                                            map(cubetobox, pts[cores*i:cores*(i+1), 0: -1]),
+                                            list(map(cubetobox, pts[cores*i:cores*(i+1), 0: -1])),
                                             cores)
 
     # selecting threshold, rescaling function
-    t = pts[pts[:, -1].argsort()][np.ceil(tratio*n)-1, -1]
+    t = pts[pts[:, -1].argsort()][int(np.ceil(tratio*n))-1, -1]
 
     def fscale(fval):
         if fval < t:
@@ -88,7 +87,7 @@ def search(f, box, n, it, cores, resfile,
     # iterations (current iteration m is equal to h*cores+i)
     T = np.identity(d)
 
-    for h in range(it/cores):
+    for h in range(it//cores):
         # refining scaling matrix T
         if d > 1:
             pcafit = rbf(pts, np.identity(d))
@@ -97,7 +96,7 @@ def search(f, box, n, it, cores, resfile,
             for i in range(nrand):
                 cover[i, -1] = pcafit(cover[i, 0: -1])
 
-            cloud = cover[cover[:, -1].argsort()][0:np.ceil(vf*nrand), 0:-1]
+            cloud = cover[cover[:, -1].argsort()][0:int(np.ceil(vf*nrand)), 0:-1]
             eigval, eigvec = np.linalg.eig(np.cov(np.transpose(cloud)))
 
             T = np.zeros((d, d))
@@ -125,14 +124,22 @@ def search(f, box, n, it, cores, resfile,
                     pts[n+h*cores+i, 0:-1] = np.copy(x)
                     fitmin = fit(x)
 
-        pts[n+cores*h:n+cores*(h+1), -1] = map(fscale,
-                                               pmap(f, map(cubetobox, pts[n+cores*h:n+cores*(h+1), 0:-1]), cores))
+        pts[n+cores*h:n+cores*(h+1), -1] = list(map(fscale,
+                                               pmap(f, list(map(cubetobox, pts[n+cores*h:n+cores*(h+1), 0:-1])), cores)))
 
     # saving result into external file
-    extfile = open(resfile, 'wb')
-    wr = csv.writer(extfile, dialect='excel')
-    for item in pts:
-        wr.writerow(item)
+    colwidth = 10
+
+    np.savetxt(resfile, pts, delimiter=',', fmt=' %.'+str(colwidth-4)+'f')
+
+    labels = [' par_'+str(i+1)+',' for i in range(d)]+[' fun_val']
+    for i in range(d+1):
+        labels[i] = labels[i]+(colwidth-len(labels[i]))*' '
+
+    with open(resfile, 'r+') as file:
+        content = file.read()
+        file.seek(0, 0)
+        file.write('(all values are normalized: 0 ~ min ; 1 ~ max)\n\n' + ''.join(labels) + '\n' + content)
 
 
 def latin(n, d):
