@@ -4,11 +4,11 @@
 
 Let's say you need to find optimal parameters of some computationally intensive system (for example, time-consuming simulation). If you can construct a simple Python function, that takes a set of trial parameters, performs evaluation, and returns some scalar measure of how good chosen parameters are, then the problem becomes a mathematical optimization. However, a corresponding function is expensive (one evaluation can take hours) and is a black-box (has input-output nature).
 
-**blackbox** is a minimalistic and easy-to-use Python module that efficiently searches for a global optimum (minimum) of an expensive black-box function. It makes an efficient use of limited number of function evaluations specified by a user. It is designed to work with multicore CPUs by performing several function evaluations in parallel, which results in a speedup equal to a number of cores available.
+**blackbox** is a minimalistic and easy-to-use Python module that efficiently searches for a global optimum (minimum) of an expensive black-box function. User needs to provide a function, a search region (ranges of values for each input parameter) and a number of function evaluations available. A code is designed to work on multicore CPUs by performing several function evaluations in parallel, which results in a speedup equal to a number of cores.
 
 A mathematical method behind the code is described in this arXiv note: https://arxiv.org/pdf/1605.00998.pdf
 
-Feel free to cite it if you are using method/code in your research.
+Feel free to cite this note if you are using method/code in your research.
 
 ## How do I represent my objective function?
 
@@ -24,7 +24,7 @@ def fun(par):
     
     return output
 ```
-`par` is a vector of input parameters (a Python list) and `output` is a **non-negative** scalar measure to be **minimized**.
+`par` is a vector of input parameters (a Python list), `output` is a **non-negative** scalar measure to be **minimized**.
 
 ## How do I run the procedure?
 
@@ -62,7 +62,7 @@ Parameter #1 | Parameter #2 | ... | Parameter #n | Function value
 ... | ... | ... | ... | ...
 0.042 | 0.042 | ... | 0.042 | 0.001
 
-In output file all parameters and function value are normalized into range [0, 1]: 0 corresponds to minimum value, 1 corresponds to maximum value. This should help user to analyze/interpret evolution of parameters and function values more objectively, in relative sense. Once desired set of parameters is chosen, a simple linear rescaling should be applied to obtain absolute values.
+**Important:** In output file all parameters and function value are normalized into range [0, 1]: 0 corresponds to minimum value, 1 corresponds to maximum value. This should help user to analyze/interpret evolution of parameters and function values more objectively, in relative sense. Once desired set of parameters is chosen, a simple linear rescaling should be applied to obtain absolute values.
 
 ## Author
 
