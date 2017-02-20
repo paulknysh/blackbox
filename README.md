@@ -8,7 +8,7 @@ Let's say you need to find optimal parameters of some computationally intensive 
 
 A mathematical method behind the code is described in this arXiv note: https://arxiv.org/pdf/1605.00998.pdf
 
-Feel free to [cite](https://scholar.googleusercontent.com/scholar.bib?q=info:D_0pOy0zuJ0J:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWKpUWJLAWhoKZgBPCm-OV7agzsWEGI-w&scisf=4&ct=citation&cd=-1&hl=en) this note if you are using method/code in your research.
+Feel free to cite this note if you are using method/code in your research.
 
 ## How do I represent my objective function?
 
