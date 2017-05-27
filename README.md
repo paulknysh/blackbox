@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="http://i.imgur.com/De7yibS.png">
-</p>
-
 # blackbox: A Python module for parallel optimization of expensive black-box functions
 
 ## What is this?
@@ -73,3 +69,7 @@ Parameter #1 | Parameter #2 | ... | Parameter #n | Function value
 Paul Knysh (paul.knysh@gmail.com)
 
 I receive tons of useful feedback that helps me to improve the code. Feel free to email me if you have any questions or comments.
+
+<p align="center">
+  <img src="http://i.imgur.com/De7yibS.png">
+</p>
