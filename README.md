@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="http://i.imgur.com/De7yibS.png">
+</p>
+
 # blackbox: A Python module for parallel optimization of expensive black-box functions
 
 ## What is this?
