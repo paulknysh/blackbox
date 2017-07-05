@@ -1,5 +1,6 @@
 import numpy as np
 import multiprocessing as mp
+from scipy.optimize import minimize
 
 
 def search(f, box, n, it, cores, resfile,
@@ -107,22 +108,13 @@ def search(f, box, n, it, cores, resfile,
         # sampling next batch of points
         fit = rbf(pts, T)
         pts = np.append(pts, np.zeros((cores, d+1)), axis=0)
+
         for i in range(cores):
             r = ((rho0*((it-1.-(h*cores+i))/(it-1.))**p)/(v1*(n+(h*cores+i))))**(1./d)
-            fitmin = 1.
-            for j in range(nrand):
-                x = np.random.rand(d)
-                ok = True
-                if fit(x) < fitmin:
-                    for k in range(n+h*cores+i):
-                        if np.linalg.norm(np.subtract(x, pts[k, 0:-1])) < r:
-                            ok = False
-                            break
-                else:
-                    ok = False
-                if ok:
-                    pts[n+h*cores+i, 0:-1] = np.copy(x)
-                    fitmin = fit(x)
+            cons = [{'type': 'ineq', 'fun': lambda x: np.linalg.norm(np.subtract(x, pts[j, 0:-1])) - r}
+                    for j in range(n+h*cores+i)]
+            res = minimize(fit, np.random.rand(d), method='SLSQP', bounds=[[0., 1.]]*d, constraints=cons)
+            pts[n+h*cores+i, 0:-1] = np.copy(res.x)
 
         pts[n+cores*h:n+cores*(h+1), -1] = list(map(fscale,
                                                pmap(f, list(map(cubetobox, pts[n+cores*h:n+cores*(h+1), 0:-1])), cores)))
