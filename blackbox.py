@@ -111,7 +111,7 @@ def search(f, box, n, it, cores, resfile,
 
         for i in range(cores):
             r = ((rho0*((it-1.-(h*cores+i))/(it-1.))**p)/(v1*(n+(h*cores+i))))**(1./d)
-            cons = [{'type': 'ineq', 'fun': lambda x: np.linalg.norm(np.subtract(x, pts[j, 0:-1])) - r}
+            cons = [{'type': 'ineq', 'fun': lambda x, localj=j: np.linalg.norm(np.subtract(x, pts[localj, 0:-1])) - r}
                     for j in range(n+h*cores+i)]
             res = minimize(fit, np.random.rand(d), method='SLSQP', bounds=[[0., 1.]]*d, constraints=cons)
             pts[n+h*cores+i, 0:-1] = np.copy(res.x)
