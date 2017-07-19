@@ -24,7 +24,7 @@ def fun(par):
     
     return output
 ```
-`par` is a vector of input parameters (a Python list), `output` is a **non-negative** scalar measure to be **minimized**.
+`par` is a vector of input parameters (a Python list), `output` is a scalar measure to be **minimized**.
 
 ## How do I run the procedure?
 
@@ -40,11 +40,11 @@ def fun(par):
 
 def main():
     bb.search(f=fun,  # given function
-              box=[[-10., 10.], [-10., 10.]],  # range of values for each parameter (2D example)
+              box=[[-10., 10.], [-10., 10.]],  # range of values for each parameter
               n=8,  # number of function calls on initial stage (global search)
               it=8,  # number of function calls on subsequent stage (local search)
-              cores=4,  # number of cores to be used
-              resfile='output.csv')  # .csv file where iterations will be saved
+              cores=4,  # number of calls that will be evaluated in parallel (number of cores)
+              resfile='output.csv')  # text file where iterations will be saved
 
 
 if __name__ == '__main__':
@@ -54,15 +54,12 @@ if __name__ == '__main__':
 
 ## How about results?
 
-Iterations are saved in .csv file with the following structure:
+Iterations are sorted by function value (best solution is in the top) and saved in a text file with the following structure:
 
 Parameter #1 | Parameter #2 | ... | Parameter #n | Function value
 --- | --- | --- | --- | ---
-0.139 | 0.488 | ... | 0.205 | 0.637
++1.6355e+01 | -4.7364e+03 | ... | +6.4012e+00 | +1.1937e-04
 ... | ... | ... | ... | ...
-0.042 | 0.042 | ... | 0.042 | 0.001
-
-**Important:** In output file all parameters and function value are normalized into range [0, 1]: 0 corresponds to minimum value, 1 corresponds to maximum value. This should help user to analyze/interpret evolution of parameters and function values more objectively, in relative sense. Once desired set of parameters is chosen, a simple linear rescaling should be applied to obtain absolute values.
 
 ## Author
 
