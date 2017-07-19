@@ -4,11 +4,9 @@ from scipy.optimize import minimize
 
 
 def search(f, box, n, it, cores, resfile,
-           tratio=0.75, rho0=0.75, p=0.75,
-           nrand=10000, vf=0.05):
+           rho0=0.5, p=1.0, nrand=10000, vf=0.05):
     """
-    Minimize (maximize, if applied on 1/(f+1) or similar) given positive
-    expensive black-box function and write iterations to .csv file.
+    Minimize given expensive black-box function and write results to text file.
 
     Parameters
     ----------
@@ -23,18 +21,15 @@ def search(f, box, n, it, cores, resfile,
     cores : int
         Number of cores available.
     resfile : str
-        Name of .csv file to save iterations.
-    tratio : float, optional
-        Fraction of initially sampled points to select threshold.
+        Name of text file to save iterations.
     rho0 : float, optional
         Initial "balls density".
     p : float, optional
         Rate of "balls density" decay (p=1 - linear, p>1 - faster, 0<p<1 - slower).
     nrand : int, optional
-        Number of random samples that are used to cover space for fit
-        minimizing and rescaling.
+        Number of random samples that is used for space rescaling.
     vf : float, optional
-        Fraction of nrand that is used for rescaling.
+        Fraction of nrand that is actually used for space rescaling.
     """
     # space size
     d = len(box)
@@ -63,21 +58,7 @@ def search(f, box, n, it, cores, resfile,
 
     # initial sampling
     for i in range(n//cores):
-        pts[cores*i:cores*(i+1), -1] = pmap(f,
-                                            list(map(cubetobox, pts[cores*i:cores*(i+1), 0: -1])),
-                                            cores)
-
-    # selecting threshold, rescaling function
-    t = pts[pts[:, -1].argsort()][int(np.ceil(tratio*n))-1, -1]
-
-    def fscale(fval):
-        if fval < t:
-            return fval/t
-        else:
-            return 1.
-
-    for i in range(n):
-        pts[i, -1] = fscale(pts[i, -1])
+        pts[cores*i:cores*(i+1), -1] = pmap(f, list(map(cubetobox, pts[cores*i:cores*(i+1), 0: -1])), cores)
 
     # volume of d-dimensional ball (r = 1)
     if not d % 2:
@@ -116,22 +97,16 @@ def search(f, box, n, it, cores, resfile,
             res = minimize(fit, np.random.rand(d), method='SLSQP', bounds=[[0., 1.]]*d, constraints=cons)
             pts[n+h*cores+i, 0:-1] = np.copy(res.x)
 
-        pts[n+cores*h:n+cores*(h+1), -1] = list(map(fscale,
-                                               pmap(f, list(map(cubetobox, pts[n+cores*h:n+cores*(h+1), 0:-1])), cores)))
+        pts[n+cores*h:n+cores*(h+1), -1] = pmap(f, list(map(cubetobox, pts[n+cores*h:n+cores*(h+1), 0:-1])), cores)
 
     # saving result into external file
-    colwidth = 10
-
-    np.savetxt(resfile, pts, delimiter=',', fmt=' %.'+str(colwidth-4)+'f')
+    pts[:, 0:-1] = list(map(cubetobox, pts[:, 0:-1]))
+    pts = pts[pts[:, -1].argsort()]
 
     labels = [' par_'+str(i+1)+',' for i in range(d)]+[' fun_val']
-    for i in range(d+1):
-        labels[i] = labels[i]+(colwidth-len(labels[i]))*' '
+    labels = [labels[i]+(13-len(labels[i]))*' ' for i in range(d+1)]
 
-    with open(resfile, 'r+') as file:
-        content = file.read()
-        file.seek(0, 0)
-        file.write('(all values are normalized: 0 ~ min ; 1 ~ max)\n\n' + ''.join(labels) + '\n' + content)
+    np.savetxt(resfile, pts, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
 
 
 def latin(n, d):
