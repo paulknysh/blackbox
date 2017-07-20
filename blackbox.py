@@ -60,6 +60,10 @@ def search(f, box, n, it, cores, resfile,
     for i in range(n//cores):
         pts[cores*i:cores*(i+1), -1] = pmap(f, list(map(cubetobox, pts[cores*i:cores*(i+1), 0: -1])), cores)
 
+    # rescaling function values
+    fmax = max(abs(pts[:, -1]))
+    pts[:, -1] = pts[:, -1]/fmax
+
     # volume of d-dimensional ball (r = 1)
     if not d % 2:
         v1 = np.pi**(d/2)/np.math.factorial(d/2)
@@ -94,13 +98,17 @@ def search(f, box, n, it, cores, resfile,
             r = ((rho0*((it-1.-(h*cores+i))/(it-1.))**p)/(v1*(n+(h*cores+i))))**(1./d)
             cons = [{'type': 'ineq', 'fun': lambda x, localj=j: np.linalg.norm(np.subtract(x, pts[localj, 0:-1])) - r}
                     for j in range(n+h*cores+i)]
-            res = minimize(fit, np.random.rand(d), method='SLSQP', bounds=[[0., 1.]]*d, constraints=cons)
+            while True:
+                res = minimize(fit, np.random.rand(d), method='SLSQP', bounds=[[0., 1.]]*d, constraints=cons)
+                if np.isnan(res.x)[0] is False:
+                    break
             pts[n+h*cores+i, 0:-1] = np.copy(res.x)
 
-        pts[n+cores*h:n+cores*(h+1), -1] = pmap(f, list(map(cubetobox, pts[n+cores*h:n+cores*(h+1), 0:-1])), cores)
+        pts[n+cores*h:n+cores*(h+1), -1] = pmap(f, list(map(cubetobox, pts[n+cores*h:n+cores*(h+1), 0:-1])), cores)/fmax
 
-    # saving result into external file
+    # saving results into external file
     pts[:, 0:-1] = list(map(cubetobox, pts[:, 0:-1]))
+    pts[:, -1] = pts[:, -1]*fmax
     pts = pts[pts[:, -1].argsort()]
 
     labels = [' par_'+str(i+1)+',' for i in range(d)]+[' fun_val']
