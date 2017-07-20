@@ -100,7 +100,7 @@ def search(f, box, n, it, cores, resfile,
                     for j in range(n+h*cores+i)]
             while True:
                 res = minimize(fit, np.random.rand(d), method='SLSQP', bounds=[[0., 1.]]*d, constraints=cons)
-                if np.isnan(res.x)[0] is False:
+                if np.isnan(res.x)[0] == False:
                     break
             pts[n+h*cores+i, 0:-1] = np.copy(res.x)
 
