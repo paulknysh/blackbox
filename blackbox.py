@@ -1,12 +1,12 @@
 import numpy as np
 import multiprocessing as mp
-from scipy.optimize import minimize
+import scipy.optimize as op
 
 
-def search(f, box, n, it, cores, resfile,
-           rho0=0.5, p=1.0, nrand=10000, vf=0.05):
+def search(f, box, n, m, batch, resfile,
+           rho0=0.5, p=1.0, nrand=10000, nrand_frac=0.05):
     """
-    Minimize given expensive black-box function and write results to text file.
+    Minimize given expensive black-box function and save results into text file.
 
     Parameters
     ----------
@@ -16,105 +16,94 @@ def search(f, box, n, it, cores, resfile,
         List of ranges for each parameter.
     n : int
         Number of initial function calls.
-    it : int
+    m : int
         Number of subsequent function calls.
-    cores : int
-        Number of cores available.
+    batch : int
+        Number of function calls evaluated simultaneously (in parallel).
     resfile : str
-        Name of text file to save iterations.
+        Text file to save results.
     rho0 : float, optional
         Initial "balls density".
     p : float, optional
         Rate of "balls density" decay (p=1 - linear, p>1 - faster, 0<p<1 - slower).
     nrand : int, optional
-        Number of random samples that is used for space rescaling.
-    vf : float, optional
+        Number of random samples that is generated for space rescaling.
+    nrand_frac : float, optional
         Fraction of nrand that is actually used for space rescaling.
     """
     # space size
     d = len(box)
 
-    # adjust the number of iterations to the number of cores
-    if n % cores:
-        n = n - n % cores + cores
+    # adjusting the number of function calls to the batch size
+    if n % batch != 0:
+        n = n - n % batch + batch
 
-    if it % cores:
-        it = it - it % cores + cores
+    if m % batch != 0:
+        m = m - m % batch + batch
 
-    # scales a given point from a unit cube to box
-    def cubetobox(pt):
-        res = np.zeros(d)
-        for i in range(d):
-            res[i] = box[i][0] + (box[i][1] - box[i][0]) * pt[i]
-        return res
+    # go from normalized values (unit cube) to absolute values (box)
+    def cubetobox(x):
+        return [box[i][0]+(box[i][1]-box[i][0])*x[i] for i in range(d)]
 
     # generating latin hypercube
-    pts = np.zeros((n, d+1))
-    lh = latin(n, d)
-
-    for i in range(n):
-        for j in range(d):
-            pts[i, j] = lh[i, j]
+    points = np.zeros((n, d+1))
+    points[:, 0:-1] = latin(n, d)
 
     # initial sampling
-    for i in range(n//cores):
-        pts[cores*i:cores*(i+1), -1] = pmap(f, list(map(cubetobox, pts[cores*i:cores*(i+1), 0: -1])), cores)
+    for i in range(n//batch):
+        points[batch*i:batch*(i+1), -1] = pmap(f, list(map(cubetobox, points[batch*i:batch*(i+1), 0:-1])))
 
-    # rescaling function values
-    fmax = max(abs(pts[:, -1]))
-    pts[:, -1] = pts[:, -1]/fmax
+    # normalizing function values
+    fmax = max(abs(points[:, -1]))
+    points[:, -1] = points[:, -1]/fmax
 
     # volume of d-dimensional ball (r = 1)
-    if not d % 2:
+    if d % 2 == 0:
         v1 = np.pi**(d/2)/np.math.factorial(d/2)
     else:
         v1 = 2*(4*np.pi)**((d-1)/2)*np.math.factorial((d-1)/2)/np.math.factorial(d)
 
-    # iterations (current iteration m is equal to h*cores+i)
+    # subsequent iterations (current subsequent iteration = i*batch+j)
     T = np.identity(d)
 
-    for h in range(it//cores):
+    for i in range(m//batch):
+
         # refining scaling matrix T
         if d > 1:
-            pcafit = rbf(pts, np.identity(d))
-            cover = np.zeros((nrand, d+1))
-            cover[:, 0:-1] = np.random.rand(nrand, d)
-            for i in range(nrand):
-                cover[i, -1] = pcafit(cover[i, 0: -1])
+            fit_noscale = rbf(points, np.identity(d))
+            population = np.zeros((nrand, d+1))
+            population[:, 0:-1] = np.random.rand(nrand, d)
+            population[:, -1] = list(map(fit_noscale, population[:, 0:-1]))
 
-            cloud = cover[cover[:, -1].argsort()][0:int(np.ceil(vf*nrand)), 0:-1]
+            cloud = population[population[:, -1].argsort()][0:int(nrand*nrand_frac), 0:-1]
             eigval, eigvec = np.linalg.eig(np.cov(np.transpose(cloud)))
-
-            T = np.zeros((d, d))
-            for i in range(d):
-                T[i] = eigvec[:, i]/np.sqrt(eigval[i])
+            T = [eigvec[:, j]/np.sqrt(eigval[j]) for j in range(d)]
             T = T/np.linalg.norm(T)
 
         # sampling next batch of points
-        fit = rbf(pts, T)
-        pts = np.append(pts, np.zeros((cores, d+1)), axis=0)
+        fit = rbf(points, T)
+        points = np.append(points, np.zeros((batch, d+1)), axis=0)
 
-        for i in range(cores):
-            r = ((rho0*((it-1.-(h*cores+i))/(it-1.))**p)/(v1*(n+(h*cores+i))))**(1./d)
-            cons = [{'type': 'ineq', 'fun': lambda x, localj=j: np.linalg.norm(np.subtract(x, pts[localj, 0:-1])) - r}
-                    for j in range(n+h*cores+i)]
+        for j in range(batch):
+            r = ((rho0*((m-1.-(i*batch+j))/(m-1.))**p)/(v1*(n+i*batch+j)))**(1./d)
+            cons = [{'type': 'ineq', 'fun': lambda x, localk=k: np.linalg.norm(np.subtract(x, points[localk, 0:-1])) - r}
+                    for k in range(n+i*batch+j)]
             while True:
-                res = minimize(fit, np.random.rand(d), method='SLSQP', bounds=[[0., 1.]]*d, constraints=cons)
-                if np.isnan(res.x)[0] == False:
+                minfit = op.minimize(fit, np.random.rand(d), method='SLSQP', bounds=[[0., 1.]]*d, constraints=cons)
+                if np.isnan(minfit.x)[0] == False:
                     break
-            pts[n+h*cores+i, 0:-1] = np.copy(res.x)
+            points[n+i*batch+j, 0:-1] = np.copy(minfit.x)
 
-        pts[n+cores*h:n+cores*(h+1), -1] = pmap(f, list(map(cubetobox, pts[n+cores*h:n+cores*(h+1), 0:-1])), cores)/fmax
+        points[n+batch*i:n+batch*(i+1), -1] = pmap(f, list(map(cubetobox, points[n+batch*i:n+batch*(i+1), 0:-1])))/fmax
 
-    # saving results into external file
-    pts[:, 0:-1] = list(map(cubetobox, pts[:, 0:-1]))
-    pts[:, -1] = pts[:, -1]*fmax
-    pts = pts[pts[:, -1].argsort()]
+    # saving results into text file
+    points[:, 0:-1] = list(map(cubetobox, points[:, 0:-1]))
+    points[:, -1] = points[:, -1]*fmax
+    points = points[points[:, -1].argsort()]
 
-    labels = [' par_'+str(i+1)+',' for i in range(d)]+[' fun_val']
-    labels = [labels[i]+(13-len(labels[i]))*' ' for i in range(d+1)]
+    labels = [' par_'+str(i+1)+(7-len(str(i+1)))*' '+',' for i in range(d)]+[' f_value    ']
 
-    np.savetxt(resfile, pts, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
+    np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
 
 
 def latin(n, d):
@@ -130,52 +119,42 @@ def latin(n, d):
 
     Returns
     -------
-    pts : ndarray
+    lh : ndarray
         Array of points uniformly placed in d-dimensional unit cube.
     """
-    # starting with diagonal shape
-    pts = np.ones((n, d))
-
-    for i in range(n):
-        pts[i] = pts[i]*i/(n-1.)
-
     # spread function
-    def spread(p):
-        s = 0.
-        for i in range(n):
-            for j in range(n):
-                if i > j:
-                    s = s+1./np.linalg.norm(np.subtract(p[i], p[j]))
-        return s
+    def spread(points):
+        return sum(1./np.linalg.norm(np.subtract(points[i], points[j])) for i in range(n) for j in range(n) if i > j)
+
+    # starting with diagonal shape
+    lh = [[i/(n-1.)]*d for i in range(n)]
 
     # minimizing spread function by shuffling
-    currminspread = spread(pts)
+    minspread = spread(lh)
 
-    for m in range(1000):
+    for i in range(1000):
+        point1 = np.random.randint(n)
+        point2 = np.random.randint(n)
+        dim = np.random.randint(d)
 
-        p1 = np.random.randint(n)
-        p2 = np.random.randint(n)
-        k = np.random.randint(d)
+        newlh = np.copy(lh)
+        newlh[point1, dim], newlh[point2, dim] = newlh[point2, dim], newlh[point1, dim]
+        newspread = spread(newlh)
 
-        newpts = np.copy(pts)
-        newpts[p1, k], newpts[p2, k] = newpts[p2, k], newpts[p1, k]
-        newspread = spread(newpts)
+        if newspread < minspread:
+            lh = np.copy(newlh)
+            minspread = newspread
 
-        if newspread < currminspread:
-            pts = np.copy(newpts)
-            currminspread = newspread
-
-    return pts
+    return lh
 
 
-def rbf(pts, T):
+def rbf(points, T):
     """
-    Build RBF-fit for given points (see Holmstrom, 2008 for details) using
-    scaling matrix.
+    Build RBF-fit for given points (see Holmstrom, 2008 for details) using scaling matrix.
 
     Parameters
     ----------
-    pts : ndarray
+    points : ndarray
         Array of multi-d points with corresponding values [[x1, x2, .., xd, val], ...].
     T : ndarray
         Scaling matrix.
@@ -185,24 +164,18 @@ def rbf(pts, T):
     fit : callable
         Function that returns the value of the RBF-fit at a given point.
     """
-    n = len(pts)
-    d = len(pts[0])-1
+    n = len(points)
+    d = len(points[0])-1
 
     def phi(r):
         return r*r*r
 
-    Phi = np.zeros((n, n))
-    for i in range(n):
-        for j in range(n):
-            Phi[i, j] = phi(np.linalg.norm(np.dot(T, np.subtract(pts[i, 0:-1], pts[j, 0:-1]))))
+    Phi = [[phi(np.linalg.norm(np.dot(T, np.subtract(points[i, 0:-1], points[j, 0:-1])))) for j in range(n)] for i in range(n)]
 
     P = np.ones((n, d+1))
-    for i in range(n):
-        P[i, 0:-1] = pts[i, 0:-1]
+    P[:, 0:-1] = points[:, 0:-1]
 
-    F = np.zeros(n)
-    for i in range(n):
-        F[i] = pts[i, -1]
+    F = points[:, -1]
 
     M = np.zeros((n+d+1, n+d+1))
     M[0:n, 0:n] = Phi
@@ -213,24 +186,17 @@ def rbf(pts, T):
     v[0:n] = F
 
     sol = np.linalg.solve(M, v)
+    lam, b, a = sol[0:n], sol[n:n+d], sol[n+d]
 
-    lam = sol[0:n]
-    b = sol[n:n+d]
-    a = sol[n+d]
-
-    def fit(z):
-        res = 0.
-        for i in range(n):
-            res = res+lam[i]*phi(np.linalg.norm(np.dot(T, np.subtract(z, pts[i, 0:-1]))))
-        res = res+np.dot(b, z)+a
-        return res
+    def fit(x):
+        return sum(lam[i]*phi(np.linalg.norm(np.dot(T, np.subtract(x, points[i, 0:-1])))) for i in range(n)) + np.dot(b, x) + a
 
     return fit
 
 
-def pmap(f, batch, n):
+def pmap(f, batch):
     """
-    Map a function on a batch of arguments in a parallel way using multiple cores.
+    Map a function on a batch of arguments in a parallel way.
 
     Parameters
     ----------
@@ -238,15 +204,13 @@ def pmap(f, batch, n):
        Function.
     batch : list
        List of arguments.
-    n : int
-       Number of cores.
 
     Returns
     -------
     res : list
         List of corresponding values.
     """
-    pool = mp.Pool(processes=n)
+    pool = mp.Pool(processes=len(batch))
     res = pool.map(f, batch)
     pool.close()
     pool.join()
