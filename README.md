@@ -24,11 +24,11 @@ def fun(par):
     
     return output
 ```
-`par` is a vector of input parameters (a Python list), `output` is a scalar measure to be **minimized**.
+**par** is a vector of input parameters (a Python list), **output** is a scalar measure to be **minimized**.
 
 ## How do I run the procedure?
 
-No installation is needed. Just place `blackbox.py` into your working directory. Main file should look like that:
+No installation is needed. Just place **blackbox.py** into your working directory. Main file should look like that:
 ```python
 import blackbox as bb
 
@@ -41,16 +41,19 @@ def fun(par):
 def main():
     bb.search(f=fun,  # given function
               box=[[-10., 10.], [-10., 10.]],  # range of values for each parameter
-              n=8,  # number of function calls on initial stage (global search)
-              it=8,  # number of function calls on subsequent stage (local search)
-              cores=4,  # number of calls that will be evaluated in parallel (number of cores)
-              resfile='output.csv')  # text file where iterations will be saved
+              n=20,  # number of function calls on initial stage (global search)
+              m=20,  # number of function calls on subsequent stage (local search)
+              batch=4,  # number of calls that will be evaluated in parallel
+              resfile='output.csv')  # text file where results will be saved
 
 
 if __name__ == '__main__':
     main()
 ```
-**Important:** `n` must be greater than the number of parameters, `it` must be greater than 1. Both `n` and `it` are expected to be divisible by `cores` (if not, code will adjust them automatically).
+**Important:**
+* All function calls are divided into batches that are evaluated in parallel. Total number of these parallel cycles is **(n+m)/batch**.
+* **n** must be greater than the number of parameters, **m** must be greater than 1, **batch** should not exceed the number of CPU cores available.
+* Code itself (not counting time spent on function evaluations) takes from few seconds to few minutes to run. Therefore, it doesn't make sense to use it for cheap functions.
 
 ## How about results?
 
