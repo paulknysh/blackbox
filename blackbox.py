@@ -4,7 +4,8 @@ import scipy.optimize as op
 
 
 def search(f, box, n, m, batch, resfile,
-           rho0=0.5, p=1.0, nrand=10000, nrand_frac=0.05):
+           rho0=0.5, p=1.0, nrand=10000, nrand_frac=0.05,
+           executor=mp.Pool):
     """
     Minimize given expensive black-box function and save results into text file.
 
@@ -30,6 +31,10 @@ def search(f, box, n, m, batch, resfile,
         Number of random samples that is generated for space rescaling.
     nrand_frac : float, optional
         Fraction of nrand that is actually used for space rescaling.
+    executor : callable, optional
+        Should have a map method and behave as a context manager.
+        Allows the user to use various parallelisation tools
+        as dask.distributed or pathos.
     """
     # space size
     d = len(box)
@@ -51,7 +56,8 @@ def search(f, box, n, m, batch, resfile,
 
     # initial sampling
     for i in range(n//batch):
-        points[batch*i:batch*(i+1), -1] = pmap(f, list(map(cubetobox, points[batch*i:batch*(i+1), 0:-1])))
+        with executor() as e:
+            points[batch*i:batch*(i+1), -1] = list(e.map(f, list(map(cubetobox, points[batch*i:batch*(i+1), 0:-1]))))
 
     # normalizing function values
     fmax = max(abs(points[:, -1]))
@@ -93,8 +99,8 @@ def search(f, box, n, m, batch, resfile,
                 if np.isnan(minfit.x)[0] == False:
                     break
             points[n+i*batch+j, 0:-1] = np.copy(minfit.x)
-
-        points[n+batch*i:n+batch*(i+1), -1] = pmap(f, list(map(cubetobox, points[n+batch*i:n+batch*(i+1), 0:-1])))/fmax
+        with executor() as e:
+            points[n+batch*i:n+batch*(i+1), -1] = list(e.map(f, list(map(cubetobox, points[n+batch*i:n+batch*(i+1), 0:-1]))))/fmax
 
     # saving results into text file
     points[:, 0:-1] = list(map(cubetobox, points[:, 0:-1]))
@@ -192,26 +198,3 @@ def rbf(points, T):
         return sum(lam[i]*phi(np.linalg.norm(np.dot(T, np.subtract(x, points[i, 0:-1])))) for i in range(n)) + np.dot(b, x) + a
 
     return fit
-
-
-def pmap(f, batch):
-    """
-    Map a function on a batch of arguments in a parallel way.
-
-    Parameters
-    ----------
-    f : callable
-       Function.
-    batch : list
-       List of arguments.
-
-    Returns
-    -------
-    res : list
-        List of corresponding values.
-    """
-    pool = mp.Pool(processes=len(batch))
-    res = pool.map(f, batch)
-    pool.close()
-    pool.join()
-    return res
