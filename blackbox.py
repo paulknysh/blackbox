@@ -1,11 +1,28 @@
 import numpy as np
+import warnings
 import multiprocessing as mp
 import scipy.optimize as op
+
+try:
+    Pool = mp.Pool
+    with Pool():
+        pass
+except AttributeError:
+    warnings.warn("running on python2, setup context-manager for Pool object")
+    from contextlib import contextmanager
+    from functools import wraps
+
+    @wraps(mp.Pool)
+    @contextmanager
+    def Pool(*args, **kwargs):
+        pool = mp.Pool(*args, **kwargs)
+        yield pool
+        pool.terminate()
 
 
 def search(f, box, n, m, batch, resfile='',
            rho0=0.5, p=1.0, nrand=10000, nrand_frac=0.05,
-           executor=mp.Pool):
+           executor=Pool):
     """
     Minimize given expensive black-box function and save results into text file.
 
