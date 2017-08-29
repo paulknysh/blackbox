@@ -206,13 +206,29 @@ def rbf(points, T):
 
 
 def get_default_executor():
+    """Provide a default executor (an context manager
+    returning an object with a map method)
+
+    This is the multiprocessing Pool object () for python3.
+
+    The multiprocessing Pool in python2 does not have an __enter__
+    and __exit__ method, this function provide a backport of the python3 Pool
+    context manager.
+
+
+    Returns
+    -------
+    Executor like object
+        An object with context manager (__enter__, __exit__) and map method.
+    """
     try:
         Pool = mp.Pool
         with Pool():
             pass
         return Pool
     except AttributeError:
-        warnings.warn("running on python2, setup context-manager for Pool object")
+        warnings.warn("running on python2, "
+                      "setup context-manager for Pool object")
         from contextlib import contextmanager
         from functools import wraps
 
