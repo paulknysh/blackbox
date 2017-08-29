@@ -106,14 +106,13 @@ def search(f, box, n, m, batch, resfile='',
         with executor() as e:
             points[n+batch*i:n+batch*(i+1), -1] = list(e.map(f, list(map(cubetobox, points[n+batch*i:n+batch*(i+1), 0:-1]))))/fmax
 
-    if resfile:
+
         # saving results into text file
         points[:, 0:-1] = list(map(cubetobox, points[:, 0:-1]))
         points[:, -1] = points[:, -1]*fmax
         points = points[points[:, -1].argsort()]
-
+    if resfile:
         labels = [' par_'+str(i+1)+(7-len(str(i+1)))*' '+',' for i in range(d)]+[' f_value    ']
-
         np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
     return points
 
@@ -228,7 +227,7 @@ def get_default_executor():
         return Pool
     except AttributeError:
         warnings.warn("running on python2, "
-                      "setup context-manager for Pool object")
+                      "setup context-manager for Pool object")c
         from contextlib import contextmanager
         from functools import wraps
 
