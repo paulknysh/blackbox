@@ -227,7 +227,7 @@ def get_default_executor():
         return Pool
     except AttributeError:
         warnings.warn("running on python2, "
-                      "setup context-manager for Pool object")c
+                      "setup context-manager for Pool object")
         from contextlib import contextmanager
         from functools import wraps
 
