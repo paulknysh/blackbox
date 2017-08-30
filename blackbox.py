@@ -4,9 +4,45 @@ import multiprocessing as mp
 import scipy.optimize as op
 
 
+def get_default_executor():
+    """Provide a default executor (an context manager
+    returning an object with a map method)
+
+    This is the multiprocessing Pool object () for python3.
+
+    The multiprocessing Pool in python2 does not have an __enter__
+    and __exit__ method, this function provide a backport of the python3 Pool
+    context manager.
+
+
+    Returns
+    -------
+    Executor like object
+        An object with context manager (__enter__, __exit__) and map method.
+    """
+    try:
+        Pool = mp.Pool
+        with Pool():
+            pass
+        return Pool
+    except AttributeError:
+        warnings.warn("running on python2, "
+                      "setup context-manager for Pool object")
+        from contextlib import contextmanager
+        from functools import wraps
+
+        @wraps(mp.Pool)
+        @contextmanager
+        def Pool(*args, **kwargs):
+            pool = mp.Pool(*args, **kwargs)
+            yield pool
+            pool.terminate()
+        return Pool
+
+
 def search(f, box, n, m, batch, resfile='',
            rho0=0.5, p=1.0, nrand=10000, nrand_frac=0.05,
-           executor=None):
+           executor=get_default_executor()):
     """
     Minimize given expensive black-box function and save results into text file.
 
@@ -39,9 +75,6 @@ def search(f, box, n, m, batch, resfile='',
     """
     # space size
     d = len(box)
-
-    if not executor:
-        executor = get_default_executor()
 
     # adjusting the number of function calls to the batch size
     if n % batch != 0:
@@ -107,10 +140,10 @@ def search(f, box, n, m, batch, resfile='',
             points[n+batch*i:n+batch*(i+1), -1] = list(e.map(f, list(map(cubetobox, points[n+batch*i:n+batch*(i+1), 0:-1]))))/fmax
 
 
-        # saving results into text file
-        points[:, 0:-1] = list(map(cubetobox, points[:, 0:-1]))
-        points[:, -1] = points[:, -1]*fmax
-        points = points[points[:, -1].argsort()]
+    # saving results into text file
+    points[:, 0:-1] = list(map(cubetobox, points[:, 0:-1]))
+    points[:, -1] = points[:, -1]*fmax
+    points = points[points[:, -1].argsort()]
     if resfile:
         labels = [' par_'+str(i+1)+(7-len(str(i+1)))*' '+',' for i in range(d)]+[' f_value    ']
         np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
@@ -202,39 +235,3 @@ def rbf(points, T):
         return sum(lam[i]*phi(np.linalg.norm(np.dot(T, np.subtract(x, points[i, 0:-1])))) for i in range(n)) + np.dot(b, x) + a
 
     return fit
-
-
-def get_default_executor():
-    """Provide a default executor (an context manager
-    returning an object with a map method)
-
-    This is the multiprocessing Pool object () for python3.
-
-    The multiprocessing Pool in python2 does not have an __enter__
-    and __exit__ method, this function provide a backport of the python3 Pool
-    context manager.
-
-
-    Returns
-    -------
-    Executor like object
-        An object with context manager (__enter__, __exit__) and map method.
-    """
-    try:
-        Pool = mp.Pool
-        with Pool():
-            pass
-        return Pool
-    except AttributeError:
-        warnings.warn("running on python2, "
-                      "setup context-manager for Pool object")
-        from contextlib import contextmanager
-        from functools import wraps
-
-        @wraps(mp.Pool)
-        @contextmanager
-        def Pool(*args, **kwargs):
-            pool = mp.Pool(*args, **kwargs)
-            yield pool
-            pool.terminate()
-        return Pool
