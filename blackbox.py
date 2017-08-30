@@ -1,10 +1,48 @@
 import numpy as np
+import warnings
 import multiprocessing as mp
 import scipy.optimize as op
 
 
-def search(f, box, n, m, batch, resfile,
-           rho0=0.5, p=1.0, nrand=10000, nrand_frac=0.05):
+def get_default_executor():
+    """Provide a default executor (an context manager
+    returning an object with a map method)
+
+    This is the multiprocessing Pool object () for python3.
+
+    The multiprocessing Pool in python2 does not have an __enter__
+    and __exit__ method, this function provide a backport of the python3 Pool
+    context manager.
+
+
+    Returns
+    -------
+    Executor like object
+        An object with context manager (__enter__, __exit__) and map method.
+    """
+    try:
+        Pool = mp.Pool
+        with Pool():
+            pass
+        return Pool
+    except AttributeError:
+        warnings.warn("running on python2, "
+                      "setup context-manager for Pool object")
+        from contextlib import contextmanager
+        from functools import wraps
+
+        @wraps(mp.Pool)
+        @contextmanager
+        def Pool(*args, **kwargs):
+            pool = mp.Pool(*args, **kwargs)
+            yield pool
+            pool.terminate()
+        return Pool
+
+
+def search(f, box, n, m, batch, resfile='',
+           rho0=0.5, p=1.0, nrand=10000, nrand_frac=0.05,
+           executor=get_default_executor()):
     """
     Minimize given expensive black-box function and save results into text file.
 
@@ -20,8 +58,8 @@ def search(f, box, n, m, batch, resfile,
         Number of subsequent function calls.
     batch : int
         Number of function calls evaluated simultaneously (in parallel).
-    resfile : str
-        Text file to save results.
+    resfile : str, optional
+        Text file to save results if provided.
     rho0 : float, optional
         Initial "balls density".
     p : float, optional
@@ -30,6 +68,10 @@ def search(f, box, n, m, batch, resfile,
         Number of random samples that is generated for space rescaling.
     nrand_frac : float, optional
         Fraction of nrand that is actually used for space rescaling.
+    executor : callable, optional
+        Should have a map method and behave as a context manager.
+        Allows the user to use various parallelisation tools
+        as dask.distributed or pathos.
     """
     # space size
     d = len(box)
@@ -51,7 +93,8 @@ def search(f, box, n, m, batch, resfile,
 
     # initial sampling
     for i in range(n//batch):
-        points[batch*i:batch*(i+1), -1] = pmap(f, list(map(cubetobox, points[batch*i:batch*(i+1), 0:-1])))
+        with executor() as e:
+            points[batch*i:batch*(i+1), -1] = list(e.map(f, list(map(cubetobox, points[batch*i:batch*(i+1), 0:-1]))))
 
     # normalizing function values
     fmax = max(abs(points[:, -1]))
@@ -93,18 +136,18 @@ def search(f, box, n, m, batch, resfile,
                 if np.isnan(minfit.x)[0] == False:
                     break
             points[n+i*batch+j, 0:-1] = np.copy(minfit.x)
+        with executor() as e:
+            points[n+batch*i:n+batch*(i+1), -1] = list(e.map(f, list(map(cubetobox, points[n+batch*i:n+batch*(i+1), 0:-1]))))/fmax
 
-        points[n+batch*i:n+batch*(i+1), -1] = pmap(f, list(map(cubetobox, points[n+batch*i:n+batch*(i+1), 0:-1])))/fmax
 
     # saving results into text file
     points[:, 0:-1] = list(map(cubetobox, points[:, 0:-1]))
     points[:, -1] = points[:, -1]*fmax
     points = points[points[:, -1].argsort()]
-
-    labels = [' par_'+str(i+1)+(7-len(str(i+1)))*' '+',' for i in range(d)]+[' f_value    ']
-
-    np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
-
+    if resfile:
+        labels = [' par_'+str(i+1)+(7-len(str(i+1)))*' '+',' for i in range(d)]+[' f_value    ']
+        np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
+    return points
 
 def latin(n, d):
     """
@@ -192,26 +235,3 @@ def rbf(points, T):
         return sum(lam[i]*phi(np.linalg.norm(np.dot(T, np.subtract(x, points[i, 0:-1])))) for i in range(n)) + np.dot(b, x) + a
 
     return fit
-
-
-def pmap(f, batch):
-    """
-    Map a function on a batch of arguments in a parallel way.
-
-    Parameters
-    ----------
-    f : callable
-       Function.
-    batch : list
-       List of arguments.
-
-    Returns
-    -------
-    res : list
-        List of corresponding values.
-    """
-    pool = mp.Pool(processes=len(batch))
-    res = pool.map(f, batch)
-    pool.close()
-    pool.join()
-    return res
