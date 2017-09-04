@@ -4,7 +4,7 @@
 
 Let's say you need to find optimal parameters of some computationally intensive system (for example, time-consuming simulation). If you can construct a simple Python function, that takes a set of trial parameters, performs evaluation, and returns some scalar measure of how good chosen parameters are, then the problem becomes a mathematical optimization. However, a corresponding function is expensive (one evaluation can take hours) and is a black-box (has input-output nature).
 
-**blackbox** is a minimalistic and easy-to-use Python module that efficiently searches for a global optimum (minimum) of an expensive black-box function. User needs to provide a function, a search region (ranges of values for each input parameter) and a number of function evaluations available. A code is designed to work on multicore CPUs by performing several function evaluations in parallel, which results in a speedup equal to a number of cores.
+**blackbox** is a minimalistic and easy-to-use Python module that efficiently searches for a global optimum (minimum) of an expensive black-box function. User needs to provide a function, a search region (ranges of values for each input parameter) and a number of function evaluations available. A code scales well on clusters and multicore CPUs by performing all expensive function evaluations in parallel.
 
 A mathematical method behind the code is described in this arXiv note: https://arxiv.org/pdf/1605.00998.pdf
 
@@ -24,11 +24,11 @@ def fun(par):
     
     return output
 ```
-**par** is a vector of input parameters (a Python list), **output** is a scalar measure to be **minimized**.
+`par` is a vector of input parameters (a Python list), `output` is a scalar measure to be minimized.
 
 ## How do I run the procedure?
 
-No installation is needed. Just place **blackbox.py** into your working directory. Main file should look like that:
+No installation is needed. Just place `blackbox.py` into your working directory. Main file should look like that:
 ```python
 import blackbox as bb
 
@@ -51,9 +51,9 @@ if __name__ == '__main__':
     main()
 ```
 **Important:**
-* All function calls are divided into batches that are evaluated in parallel. Total number of these parallel cycles is **(n+m)/batch**.
-* **n** must be greater than the number of parameters, **m** must be greater than 1, **batch** should not exceed the number of CPU cores available.
-* Code itself (not counting time spent on function evaluations) takes from few seconds to few minutes to run. Therefore, it doesn't make sense to use it for cheap functions.
+* All function calls are divided into batches that are evaluated in parallel. Total number of these parallel cycles is `(n+m)/batch`.
+* `n` must be greater than the number of parameters, `m` must be greater than 1, `batch` should not exceed the number of computational units available.
+* An optional parameter `executor=...` should be specified when calling `bb.search()` in case when code is used on a cluster with some custom parallel engine (ipyparallel, dask.distributed, pathos etc). `executor` should be an object that has a `map` method.
 
 ## How about results?
 
