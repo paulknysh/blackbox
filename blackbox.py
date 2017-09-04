@@ -1,24 +1,24 @@
 import sys
-import numpy as np
 import warnings
 import multiprocessing as mp
+import numpy as np
 import scipy.optimize as op
 
 
 def get_default_executor():
-    """Provide a default executor (an context manager
-    returning an object with a map method)
+    """
+    Provide a default executor (a context manager
+    returning an object with a map method).
 
     This is the multiprocessing Pool object () for python3.
 
     The multiprocessing Pool in python2 does not have an __enter__
-    and __exit__ method, this function provide a backport of the python3 Pool
+    and __exit__ method, this function provides a backport of the python3 Pool
     context manager.
-
 
     Returns
     -------
-    Executor like object
+    Pool : executor-like object
         An object with context manager (__enter__, __exit__) and map method.
     """
     if (sys.version_info > (3, 0)):
@@ -39,7 +39,7 @@ def get_default_executor():
         return Pool
 
 
-def search(f, box, n, m, batch, resfile='',
+def search(f, box, n, m, batch, resfile,
            rho0=0.5, p=1.0, nrand=10000, nrand_frac=0.05,
            executor=get_default_executor()):
     """
@@ -57,8 +57,8 @@ def search(f, box, n, m, batch, resfile='',
         Number of subsequent function calls.
     batch : int
         Number of function calls evaluated simultaneously (in parallel).
-    resfile : str, optional
-        Text file to save results if provided.
+    resfile : str
+        Text file to save results.
     rho0 : float, optional
         Initial "balls density".
     p : float, optional
@@ -135,18 +135,18 @@ def search(f, box, n, m, batch, resfile='',
                 if np.isnan(minfit.x)[0] == False:
                     break
             points[n+i*batch+j, 0:-1] = np.copy(minfit.x)
+
         with executor() as e:
             points[n+batch*i:n+batch*(i+1), -1] = list(e.map(f, list(map(cubetobox, points[n+batch*i:n+batch*(i+1), 0:-1]))))/fmax
-
 
     # saving results into text file
     points[:, 0:-1] = list(map(cubetobox, points[:, 0:-1]))
     points[:, -1] = points[:, -1]*fmax
     points = points[points[:, -1].argsort()]
-    if resfile:
-        labels = [' par_'+str(i+1)+(7-len(str(i+1)))*' '+',' for i in range(d)]+[' f_value    ']
-        np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
-    return points
+
+    labels = [' par_'+str(i+1)+(7-len(str(i+1)))*' '+',' for i in range(d)]+[' f_value    ']
+    np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
+
 
 def latin(n, d):
     """
