@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import warnings
 import multiprocessing as mp
@@ -20,12 +21,10 @@ def get_default_executor():
     Executor like object
         An object with context manager (__enter__, __exit__) and map method.
     """
-    try:
+    if (sys.version_info > (3, 0)):
         Pool = mp.Pool
-        with Pool():
-            pass
         return Pool
-    except AttributeError:
+    else:
         warnings.warn("running on python2, "
                       "setup context-manager for Pool object")
         from contextlib import contextmanager
