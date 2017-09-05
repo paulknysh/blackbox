@@ -1,5 +1,4 @@
 import sys
-import warnings
 import multiprocessing as mp
 import numpy as np
 import scipy.optimize as op
@@ -25,8 +24,6 @@ def get_default_executor():
         Pool = mp.Pool
         return Pool
     else:
-        warnings.warn("running on python2, "
-                      "setup context-manager for Pool object")
         from contextlib import contextmanager
         from functools import wraps
 
