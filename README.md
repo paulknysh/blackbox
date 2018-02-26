@@ -34,13 +34,12 @@ import blackbox as bb
 
 
 def fun(par):
-    ...
-    return output
+    return par[0]**2 + par[1]**2 # dummy 2D example
 
 
 def main():
     bb.search(f=fun,  # given function
-              box=[[-10., 10.], [-10., 10.]],  # range of values for each parameter
+              box=[[-10., 10.], [-10., 10.]],  # range of values for each parameter (2D case)
               n=20,  # number of function calls on initial stage (global search)
               m=20,  # number of function calls on subsequent stage (local search)
               batch=4,  # number of calls that will be evaluated in parallel
@@ -52,7 +51,7 @@ if __name__ == '__main__':
 ```
 **Important:**
 * All function calls are divided into batches that are evaluated in parallel. Total number of these parallel cycles is `(n+m)/batch`.
-* `n` must be greater than the number of parameters, `m` must be greater than 1, `batch` should not exceed the number of computational units available.
+* `n` must be greater than the number of parameters, `m` must be greater than 1, `batch` should not exceed the number of CPU cores available.
 * An optional parameter `executor=...` should be specified when calling `bb.search()` in case when code is used on a cluster with some custom parallel engine (ipyparallel, dask.distributed, pathos etc). `executor` should be an object that has a `map` method.
 
 ## How about results?
