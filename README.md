@@ -2,7 +2,7 @@
 
 ## What is this?
 
-Let's say you need to find optimal parameters of some computationally intensive system (for example, time-consuming simulation). If you can construct a simple Python function, that takes a set of trial parameters, performs evaluation, and returns some scalar measure of how good chosen parameters are, then the problem becomes a mathematical optimization. However, a corresponding function is expensive (one evaluation can take hours) and is a black-box (has input-output nature).
+Let's say you need to find optimal parameters of some computationally intensive system (for example, hyperparameters of a neural network). If you can construct a simple Python function, that takes a set of trial parameters, performs evaluation, and returns some scalar measure of how good chosen parameters are, then the problem becomes a mathematical optimization. However, a corresponding function is expensive (one evaluation can take hours) and is a black-box (has input-output nature).
 
 **blackbox** is a minimalistic and easy-to-use Python module that efficiently searches for a global optimum (minimum) of an expensive black-box function. User needs to provide a function, a search region (ranges of values for each input parameter) and a number of function evaluations available. A code scales well on clusters and multicore CPUs by performing all expensive function evaluations in parallel.
 
