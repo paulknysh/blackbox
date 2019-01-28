@@ -10,6 +10,16 @@ A mathematical method behind the code is described in this arXiv note: https://a
 
 Feel free to cite this note if you are using method/code in your research.
 
+## Demo
+
+<img src="http://i.imgur.com/kkagLKR.png">
+
+(a) - function given on `0 < x,y < 1`.
+
+(b) - running a procedure using 15 evaluations.
+
+(c) - running a procedure using 30 evaluations.
+
 ## How do I represent my objective function?
 
 It simply needs to be wrapped into a Python function. If an external application is used, it can be accessed using system call:
