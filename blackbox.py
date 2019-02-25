@@ -161,28 +161,28 @@ def latin(n, d):
     lh : ndarray
         Array of points uniformly placed in d-dimensional unit cube.
     """
-    # spread function
-    def spread(points):
-        return sum(1./np.linalg.norm(np.subtract(points[i], points[j])) for i in range(n) for j in range(n) if i > j)
+    def phi(d):
+        x = 2
+        for i in range(10):
+        x = pow( 1+x, 1/(d+1) )
+        return x
 
-    # starting with diagonal shape
-    lh = [[i/(n-1.)]*d for i in range(n)]
+    g = phi(d)
 
-    # minimizing spread function by shuffling
-    minspread = spread(lh)
+    alpha = np.zeros(d)
+    for j in range(d):
+        alpha[j] = pow(1/g, j+1)
+    alpha = alpha % 1
 
-    for i in range(1000):
-        point1 = np.random.randint(n)
-        point2 = np.random.randint(n)
-        dim = np.random.randint(d)
+    # This number can be any real number.
+    # Common default setting is typically seed=0
+    # But seed = 0.5 is generally better.
+    seed = np.random.rand()
 
-        newlh = np.copy(lh)
-        newlh[point1, dim], newlh[point2, dim] = newlh[point2, dim], newlh[point1, dim]
-        newspread = spread(newlh)
-
-        if newspread < minspread:
-            lh = np.copy(newlh)
-            minspread = newspread
+    lh = np.zeros((n, d))
+    for i in range(n):
+        lh[i] = seed + alpha*(i+1)
+    lh = lh % 1
 
     return lh
 
