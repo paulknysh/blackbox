@@ -164,7 +164,7 @@ def latin(n, d):
     def phi(d):
         x = 2
         for i in range(10):
-        x = pow( 1+x, 1/(d+1) )
+            x = pow( 1+x, 1/(d+1) )
         return x
 
     g = phi(d)
