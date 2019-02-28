@@ -6,7 +6,7 @@ Let's say you need to find optimal parameters of some computationally intensive 
 
 **blackbox** is a minimalistic and easy-to-use Python module that efficiently searches for a global optimum (minimum) of an expensive black-box function. User needs to provide a function, a search region (ranges of values for each input parameter) and a number of function evaluations available. A code scales well on clusters and multicore CPUs by performing all expensive function evaluations in parallel.
 
-A mathematical method behind the code is described in this arXiv note: https://arxiv.org/pdf/1605.00998.pdf
+A mathematical method behind the code is described in this arXiv note (there were few updates to the method recently): https://arxiv.org/pdf/1605.00998.pdf
 
 Feel free to cite this note if you are using method/code in your research.
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 ```
 **Important:**
 * All function calls are divided into batches that are evaluated in parallel. Total number of these parallel cycles is `(n+m)/batch`.
-* `n` must be greater than the number of parameters, `m` must be greater than 1, `batch` should not exceed the number of CPU cores available.
+* `n` must be greater than the number of parameters (also, `n >= 10` is recommended), `m` must be greater than 1, `batch` should not exceed the number of CPU cores available.
 * An optional parameter `executor=...` should be specified when calling `bb.search()` in case when code is used on a cluster with some custom parallel engine (ipyparallel, dask.distributed, pathos etc). `executor` should be an object that has a `map` method.
 
 ## How about results?
