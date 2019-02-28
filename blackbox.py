@@ -83,9 +83,9 @@ def search(f, box, n, m, batch, resfile,
     def cubetobox(x):
         return [box[i][0]+(box[i][1]-box[i][0])*x[i] for i in range(d)]
 
-    # generating latin hypercube
+    # generating R-sequence
     points = np.zeros((n, d+1))
-    points[:, 0:-1] = latin(n, d)
+    points[:, 0:-1] = rseq(n, d)
 
     # initial sampling
     for i in range(n//batch):
@@ -145,9 +145,9 @@ def search(f, box, n, m, batch, resfile,
     np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
 
 
-def latin(n, d):
+def rseq(n, d):
     """
-    Build latin hypercube.
+    Build R-sequence (http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/).
 
     Parameters
     ----------
@@ -158,33 +158,18 @@ def latin(n, d):
 
     Returns
     -------
-    lh : ndarray
+    points : ndarray
         Array of points uniformly placed in d-dimensional unit cube.
     """
-    # spread function
-    def spread(points):
-        return sum(1./np.linalg.norm(np.subtract(points[i], points[j])) for i in range(n) for j in range(n) if i > j)
+    phi = 2
+    for i in range(10):
+        phi = pow(1+phi, 1./(d+1))
 
-    # starting with diagonal shape
-    lh = [[i/(n-1.)]*d for i in range(n)]
+    alpha = np.array([pow(1./phi, i+1) for i in range(d)])
 
-    # minimizing spread function by shuffling
-    minspread = spread(lh)
+    points = np.array([(0.5 + alpha*(i+1)) % 1 for i in range(n)])
 
-    for i in range(1000):
-        point1 = np.random.randint(n)
-        point2 = np.random.randint(n)
-        dim = np.random.randint(d)
-
-        newlh = np.copy(lh)
-        newlh[point1, dim], newlh[point2, dim] = newlh[point2, dim], newlh[point1, dim]
-        newspread = spread(newlh)
-
-        if newspread < minspread:
-            lh = np.copy(newlh)
-            minspread = newspread
-
-    return lh
+    return points
 
 
 def rbf(points, T):
