@@ -209,7 +209,12 @@ def rbf(points, T):
     v = np.zeros(n+d+1)
     v[0:n] = F
 
-    sol = np.linalg.solve(M, v)
+    try:
+        sol = np.linalg.solve(M, v)
+    except:
+        # might help with singular matrices
+        sol = np.linalg.lstsq(M, v)[0]
+        
     lam, b, a = sol[0:n], sol[n:n+d], sol[n+d]
 
     def fit(x):
