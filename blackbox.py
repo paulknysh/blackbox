@@ -37,7 +37,7 @@ def get_default_executor():
 
 
 def search(f, box, n, m, batch, resfile,
-           rho0=0.5, p=1.0, nrand=10000, nrand_frac=0.05,
+           rho0=0.5, p=1.0,
            executor=get_default_executor()):
     """
     Minimize given expensive black-box function and save results into text file.
@@ -60,10 +60,6 @@ def search(f, box, n, m, batch, resfile,
         Initial "balls density".
     p : float, optional
         Rate of "balls density" decay (p=1 - linear, p>1 - faster, 0<p<1 - slower).
-    nrand : int, optional
-        Number of random samples that is generated for space rescaling.
-    nrand_frac : float, optional
-        Fraction of nrand that is actually used for space rescaling.
     executor : callable, optional
         Should have a map method and behave as a context manager.
         Allows the user to use various parallelisation tools
@@ -103,24 +99,11 @@ def search(f, box, n, m, batch, resfile,
         v1 = 2*(4*np.pi)**((d-1)/2)*np.math.factorial((d-1)/2)/np.math.factorial(d)
 
     # subsequent iterations (current subsequent iteration = i*batch+j)
-    T = np.identity(d)
 
     for i in range(m//batch):
 
-        # refining scaling matrix T
-        if d > 1:
-            fit_noscale = rbf(points, np.identity(d))
-            population = np.zeros((nrand, d+1))
-            population[:, 0:-1] = np.random.rand(nrand, d)
-            population[:, -1] = list(map(fit_noscale, population[:, 0:-1]))
-
-            cloud = population[population[:, -1].argsort()][0:int(nrand*nrand_frac), 0:-1]
-            eigval, eigvec = np.linalg.eig(np.cov(np.transpose(cloud)))
-            T = [eigvec[:, j]/np.sqrt(eigval[j]) for j in range(d)]
-            T = T/np.linalg.norm(T)
-
         # sampling next batch of points
-        fit = rbf(points, T)
+        fit = rbf(points)
         points = np.append(points, np.zeros((batch, d+1)), axis=0)
 
         for j in range(batch):
@@ -172,7 +155,7 @@ def rseq(n, d):
     return points
 
 
-def rbf(points, T):
+def rbf(points):
     """
     Build RBF-fit for given points (see Holmstrom, 2008 for details) using scaling matrix.
 
@@ -180,8 +163,6 @@ def rbf(points, T):
     ----------
     points : ndarray
         Array of multi-d points with corresponding values [[x1, x2, .., xd, val], ...].
-    T : ndarray
-        Scaling matrix.
 
     Returns
     -------
@@ -194,7 +175,7 @@ def rbf(points, T):
     def phi(r):
         return r*r*r
 
-    Phi = [[phi(np.linalg.norm(np.dot(T, np.subtract(points[i, 0:-1], points[j, 0:-1])))) for j in range(n)] for i in range(n)]
+    Phi = [[phi(np.linalg.norm(np.subtract(points[i, 0:-1], points[j, 0:-1]))) for j in range(n)] for i in range(n)]
 
     P = np.ones((n, d+1))
     P[:, 0:-1] = points[:, 0:-1]
@@ -218,6 +199,6 @@ def rbf(points, T):
     lam, b, a = sol[0:n], sol[n:n+d], sol[n+d]
 
     def fit(x):
-        return sum(lam[i]*phi(np.linalg.norm(np.dot(T, np.subtract(x, points[i, 0:-1])))) for i in range(n)) + np.dot(b, x) + a
+        return sum(lam[i]*phi(np.linalg.norm(np.subtract(x, points[i, 0:-1]))) for i in range(n)) + np.dot(b, x) + a
 
     return fit
