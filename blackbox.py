@@ -157,7 +157,7 @@ def rseq(n, d):
 
 def rbf(points):
     """
-    Build RBF-fit for given points (see Holmstrom, 2008 for details) using scaling matrix.
+    Build RBF-fit for given points (see Holmstrom, 2008 for details).
 
     Parameters
     ----------
@@ -194,6 +194,7 @@ def rbf(points):
         sol = np.linalg.solve(M, v)
     except:
         # might help with singular matrices
+        print('Singular matrix occurred during RBF-fit construction. RBF-fit might be inaccurate!')
         sol = np.linalg.lstsq(M, v)[0]
         
     lam, b, a = sol[0:n], sol[n:n+d], sol[n+d]
