@@ -2,6 +2,7 @@ import sys
 import multiprocessing as mp
 import numpy as np
 import scipy.optimize as op
+import datetime
 
 
 def get_default_executor():
@@ -85,6 +86,9 @@ def search(f, box, n, m, batch, resfile,
 
     # initial sampling
     for i in range(n//batch):
+        print('[blackbox] evaluating batch %s/%s (samples %s..%s/%s) @ ' % (i+1, (n+m)//batch, i*batch+1, (i+1)*batch, n+m) + \
+        str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + ' ...')
+
         with executor() as e:
             points[batch*i:batch*(i+1), -1] = list(e.map(f, list(map(cubetobox, points[batch*i:batch*(i+1), 0:-1]))))
 
@@ -101,6 +105,8 @@ def search(f, box, n, m, batch, resfile,
     # subsequent iterations (current subsequent iteration = i*batch+j)
 
     for i in range(m//batch):
+        print('[blackbox] evaluating batch %s/%s (samples %s..%s/%s) @ ' % (n//batch+i+1, (n+m)//batch, n+i*batch+1, n+(i+1)*batch, n+m) + \
+        str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + ' ...')
 
         # sampling next batch of points
         fit = rbf(points)
