@@ -133,6 +133,8 @@ def search(f, box, n, m, batch, resfile,
     labels = [' par_'+str(i+1)+(7-len(str(i+1)))*' '+',' for i in range(d)]+[' f_value    ']
     np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
 
+    print('[blackbox] DONE (see results in ' + resfile + ') @ ' + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
 
 def rseq(n, d):
     """
