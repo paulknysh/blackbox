@@ -37,9 +37,9 @@ def get_default_executor():
         return Pool
 
 
-def search(f, box, n, m, batch, resfile,
-           rho0=0.5, p=1.0,
-           executor=get_default_executor()):
+def search_min(f, domain, budget, batch, resfile,
+               rho0=0.5, p=1.0,
+               executor=get_default_executor()):
     """
     Minimize given expensive black-box function and save results into text file.
 
@@ -47,12 +47,10 @@ def search(f, box, n, m, batch, resfile,
     ----------
     f : callable
         The objective function to be minimized.
-    box : list of lists
+    domain : list of lists
         List of ranges for each parameter.
-    n : int
-        Number of initial function calls.
-    m : int
-        Number of subsequent function calls.
+    budget : int
+        Total number of function calls available.
     batch : int
         Number of function calls evaluated simultaneously (in parallel).
     resfile : str
@@ -67,7 +65,16 @@ def search(f, box, n, m, batch, resfile,
         as dask.distributed or pathos.
     """
     # space size
-    d = len(box)
+    d = len(domain)
+
+    # default global-vs-local assumption (50-50)
+    n = budget//2
+    m = budget-n
+
+    # n has to be greater than d
+    if n <= d:
+        print('[blackbox] ERROR: budget must be at least 2*[number of parameters] + 2')
+        return
 
     # adjusting the number of function calls to the batch size
     if n % batch != 0:
@@ -76,9 +83,12 @@ def search(f, box, n, m, batch, resfile,
     if m % batch != 0:
         m = m - m % batch + batch
 
+    if n+m > budget:
+        print('[blackbox] FYI: budget was adjusted to be ' + str(n+m))
+
     # go from normalized values (unit cube) to absolute values (box)
     def cubetobox(x):
-        return [box[i][0]+(box[i][1]-box[i][0])*x[i] for i in range(d)]
+        return [domain[i][0]+(domain[i][1]-domain[i][0])*x[i] for i in range(d)]
 
     # generating R-sequence
     points = np.zeros((n, d+1))
@@ -133,7 +143,7 @@ def search(f, box, n, m, batch, resfile,
     labels = [' par_'+str(i+1)+(7-len(str(i+1)))*' '+',' for i in range(d)]+[' f_value    ']
     np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
 
-    print('[blackbox] DONE (see results in ' + resfile + ') @ ' + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    print('[blackbox] DONE: see results in ' + resfile + ' @ ' + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
 
 def rseq(n, d):
@@ -204,7 +214,7 @@ def rbf(points):
         # might help with singular matrices
         print('Singular matrix occurred during RBF-fit construction. RBF-fit might be inaccurate!')
         sol = np.linalg.lstsq(M, v)[0]
-        
+
     lam, b, a = sol[0:n], sol[n:n+d], sol[n+d]
 
     def fit(x):
