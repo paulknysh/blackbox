@@ -67,24 +67,21 @@ def search_min(f, domain, budget, batch, resfile,
     # space size
     d = len(domain)
 
+    # adjusting the budget to the batch size
+    if budget % batch != 0:
+        budget = budget - budget % batch + batch
+        print('[blackbox] FYI: budget was adjusted to be ' + str(budget))
+
     # default global-vs-local assumption (50-50)
     n = budget//2
+    if n % batch != 0:
+        n = n - n % batch + batch
     m = budget-n
 
     # n has to be greater than d
     if n <= d:
-        print('[blackbox] ERROR: budget must be at least 2*[number of parameters] + 2')
+        print('[blackbox] ERROR: budget is not sufficient')
         return
-
-    # adjusting the number of function calls to the batch size
-    if n % batch != 0:
-        n = n - n % batch + batch
-
-    if m % batch != 0:
-        m = m - m % batch + batch
-
-    if n+m > budget:
-        print('[blackbox] FYI: budget was adjusted to be ' + str(n+m))
 
     # go from normalized values (unit cube) to absolute values (box)
     def cubetobox(x):
