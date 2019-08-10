@@ -2,7 +2,7 @@
 
 ## What is this?
 
-A minimalistic and easy-to-use Python module that efficiently searches for a global minimum of an expensive black-box function (e.g. optimal hyperparameters of simulation, neural network etc). User needs to provide a function, a search domain (ranges of values for each input parameter) and a total number of function evaluations available. A code scales well on clusters and multicore CPUs by performing all expensive function evaluations in parallel.
+A minimalistic and easy-to-use Python module that efficiently searches for a global minimum of an expensive black-box function (e.g. optimal hyperparameters of simulation, neural network or anything that takes significant time to run). User needs to provide a function, a search domain (ranges of each input parameter) and a total number of function calls available. A code scales well on multicore CPUs and clusters: all function calls are divided into batches and each batch is evaluated in parallel.
 
 A mathematical method behind the code is described in this arXiv note (there were few updates to the method recently): https://arxiv.org/pdf/1605.00998.pdf
 
@@ -20,7 +20,7 @@ Don't forget to cite this note if you are using method/code.
 
 ## How do I represent my objective function?
 
-It simply needs to be wrapped into a Python function. An external application, if any, can be accessed using system call (`os.system(...)`).
+It simply needs to be wrapped into a Python function. An external application, if any, can be accessed using system call.
 ```python
 def fun(par):
     ...
@@ -41,7 +41,7 @@ def fun(par):
 
 def main():
     bb.search_min(f = fun,  # given function
-                  domain = [[-10., 10.], [-10., 10.]],  # ranges of all parameters
+                  domain = [[-10., 10.], [-10., 10.]],  # ranges of each parameter
                   budget = 40,  # total number of function calls available
                   batch = 4,  # number of calls that will be evaluated in parallel
                   resfile = 'output.csv')  # text file where results will be saved
@@ -51,8 +51,8 @@ if __name__ == '__main__':
     main()
 ```
 **Important:**
-* All function calls are divided into batches that are evaluated in parallel. Total number of batches is `budget/batch`. Also, `batch` should correspond to the number of CPU cores available.
-* An optional parameter `executor = ...` should be specified within `bb.search_min()` in case custom parallel engine is used (ipyparallel, dask.distributed, pathos etc). `executor` should be an object that has a `map` method.
+* All function calls are divided into batches and each batch is evaluated in parallel. Total number of batches is `budget/batch`. The value of `batch` should correspond to the number of available computational units.
+* An optional parameter `executor = ...` should be specified within `bb.search_min()` in case when custom parallel engine is used (ipyparallel, dask.distributed, pathos etc). `executor` should be an object that has a `map` method.
 
 ## How about results?
 
