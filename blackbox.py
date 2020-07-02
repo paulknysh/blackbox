@@ -2,6 +2,7 @@ import sys
 import multiprocessing as mp
 import numpy as np
 import scipy.optimize as op
+from scipy.interpolate import Rbf as rbf
 import datetime
 
 
@@ -121,7 +122,7 @@ def search_min(f, domain, budget, batch, resfile,
         str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + ' ...')
 
         # sampling next batch of points
-        fit = rbf(points)
+        fit = rbf(*np.transpose(points), function='cubic')
         points = np.append(points, np.zeros((batch, d+1)), axis=0)
 
         for j in range(batch):
@@ -175,53 +176,3 @@ def rseq(n, d):
     points = np.array([(0.5 + alpha*(i+1)) % 1 for i in range(n)])
 
     return points
-
-
-def rbf(points):
-    """
-    Build RBF-fit for given points (see Holmstrom, 2008 for details).
-
-    Parameters
-    ----------
-    points : ndarray
-        Array of multi-d points with corresponding values [[x1, x2, .., xd, val], ...].
-
-    Returns
-    -------
-    fit : callable
-        Function that returns the value of the RBF-fit at a given point.
-    """
-    n = len(points)
-    d = len(points[0])-1
-
-    def phi(r):
-        return r*r*r
-
-    Phi = [[phi(np.linalg.norm(np.subtract(points[i, 0:-1], points[j, 0:-1]))) for j in range(n)] for i in range(n)]
-
-    P = np.ones((n, d+1))
-    P[:, 0:-1] = points[:, 0:-1]
-
-    F = points[:, -1]
-
-    M = np.zeros((n+d+1, n+d+1))
-    M[0:n, 0:n] = Phi
-    M[0:n, n:n+d+1] = P
-    M[n:n+d+1, 0:n] = np.transpose(P)
-
-    v = np.zeros(n+d+1)
-    v[0:n] = F
-
-    try:
-        sol = np.linalg.solve(M, v)
-    except:
-        # might help with singular matrices
-        print('Singular matrix occurred during RBF-fit construction. RBF-fit might be inaccurate!')
-        sol = np.linalg.lstsq(M, v)[0]
-
-    lam, b, a = sol[0:n], sol[n:n+d], sol[n+d]
-
-    def fit(x):
-        return sum(lam[i]*phi(np.linalg.norm(np.subtract(x, points[i, 0:-1]))) for i in range(n)) + np.dot(b, x) + a
-
-    return fit
