@@ -39,16 +39,14 @@ def fun(par):
     return par[0]**2 + par[1]**2  # dummy example
 
 
-def main():
-    bb.search_min(f = fun,  # given function
-                  domain = [[-10., 10.], [-10., 10.]],  # ranges of each parameter
-                  budget = 40,  # total number of function calls available
-                  batch = 4,  # number of calls that will be evaluated in parallel
-                  resfile = 'output.csv')  # text file where results will be saved
-
-
-if __name__ == '__main__':
-    main()
+best_params = bb.search_min(f = fun,  # given function
+                            domain = [  # ranges of each parameter
+                                [-10., 10.],
+                                [-10., 10.]
+                                ],
+                            budget = 40,  # total number of function calls available
+                            batch = 4,  # number of calls that will be evaluated in parallel
+                            resfile = 'output.csv')  # text file where results will be saved
 ```
 **Important:**
 * All function calls are divided into batches and each batch is evaluated in parallel. Total number of batches is `budget/batch`. The value of `batch` should correspond to the number of available computational units.
@@ -56,7 +54,7 @@ if __name__ == '__main__':
 
 ## How about results?
 
-Iterations are sorted by function value (best solution is at the top) and saved in a text file with the following structure:
+In addition to `search_min()` returning list of optimal parameters, all trials are sorted by function value (best ones at the top) and saved in a text file with the following structure:
 
 Parameter #1 | Parameter #2 | ... | Parameter #n | Function value
 --- | --- | --- | --- | ---

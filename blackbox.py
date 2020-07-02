@@ -63,6 +63,11 @@ def search_min(f, domain, budget, batch, resfile,
         Should have a map method and behave as a context manager.
         Allows the user to use various parallelisation tools
         as dask.distributed or pathos.
+
+    Returns
+    -------
+    ndarray
+        Optimal parameters.
     """
     # space size
     d = len(domain)
@@ -141,6 +146,8 @@ def search_min(f, domain, budget, batch, resfile,
     np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
 
     print('[blackbox] DONE: see results in ' + resfile + ' @ ' + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
+    return points[0, 0:-1]
 
 
 def rseq(n, d):
