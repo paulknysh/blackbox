@@ -5,7 +5,6 @@ import scipy.optimize as op
 import datetime
 import logging
 
-
 def get_default_executor():
     """
     Provide a default executor (a context manager
@@ -72,7 +71,7 @@ def search_min(f, domain, budget, batch, resfile,
     """
 
     # get the logger
-    logger = logging.getLogger("blackbox")
+    logger = logging.getLogger("blackboxfunctions")
 
     # space size
     d = len(domain)
@@ -198,7 +197,7 @@ def rbf(points):
     """
 
     # get the logger
-    logger = logging.getLogger("blackbox")
+    logger = logging.getLogger("blackboxfunctions")
 
     n = len(points)
     d = len(points[0])-1
