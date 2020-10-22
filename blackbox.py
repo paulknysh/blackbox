@@ -3,6 +3,7 @@ import multiprocessing as mp
 import numpy as np
 import scipy.optimize as op
 import datetime
+import logging
 
 
 def get_default_executor():
@@ -69,13 +70,17 @@ def search_min(f, domain, budget, batch, resfile,
     ndarray
         Optimal parameters.
     """
+
+    # get the logger
+    logger = logging.getLogger("blackbox")
+
     # space size
     d = len(domain)
 
     # adjusting the budget to the batch size
     if budget % batch != 0:
         budget = budget - budget % batch + batch
-        print('[blackbox] FYI: budget was adjusted to be ' + str(budget))
+        logger.info('FYI: budget was adjusted to be ' + str(budget))
 
     # default global-vs-local assumption (50-50)
     n = budget//2
@@ -85,7 +90,7 @@ def search_min(f, domain, budget, batch, resfile,
 
     # n has to be greater than d
     if n <= d:
-        print('[blackbox] ERROR: budget is not sufficient')
+        logger.error('ERROR: budget is not sufficient')
         return
 
     # go from normalized values (unit cube) to absolute values (box)
@@ -98,7 +103,7 @@ def search_min(f, domain, budget, batch, resfile,
 
     # initial sampling
     for i in range(n//batch):
-        print('[blackbox] evaluating batch %s/%s (samples %s..%s/%s) @ ' % (i+1, (n+m)//batch, i*batch+1, (i+1)*batch, n+m) + \
+        logger.info('evaluating batch %s/%s (samples %s..%s/%s) @ ' % (i+1, (n+m)//batch, i*batch+1, (i+1)*batch, n+m) + \
         str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + ' ...')
 
         with executor() as e:
@@ -117,7 +122,7 @@ def search_min(f, domain, budget, batch, resfile,
     # subsequent iterations (current subsequent iteration = i*batch+j)
 
     for i in range(m//batch):
-        print('[blackbox] evaluating batch %s/%s (samples %s..%s/%s) @ ' % (n//batch+i+1, (n+m)//batch, n+i*batch+1, n+(i+1)*batch, n+m) + \
+        logger.info('evaluating batch %s/%s (samples %s..%s/%s) @ ' % (n//batch+i+1, (n+m)//batch, n+i*batch+1, n+(i+1)*batch, n+m) + \
         str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + ' ...')
 
         # sampling next batch of points
@@ -145,7 +150,7 @@ def search_min(f, domain, budget, batch, resfile,
     labels = [' par_'+str(i+1)+(7-len(str(i+1)))*' '+',' for i in range(d)]+[' f_value    ']
     np.savetxt(resfile, points, delimiter=',', fmt=' %+1.4e', header=''.join(labels), comments='')
 
-    print('[blackbox] DONE: see results in ' + resfile + ' @ ' + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    logger.info('DONE: see results in ' + resfile + ' @ ' + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
     return points[0, 0:-1]
 
@@ -191,6 +196,10 @@ def rbf(points):
     fit : callable
         Function that returns the value of the RBF-fit at a given point.
     """
+
+    # get the logger
+    logger = logging.getLogger("blackbox")
+
     n = len(points)
     d = len(points[0])-1
 
@@ -216,7 +225,7 @@ def rbf(points):
         sol = np.linalg.solve(M, v)
     except:
         # might help with singular matrices
-        print('Singular matrix occurred during RBF-fit construction. RBF-fit might be inaccurate!')
+        logger.warning('Singular matrix occurred during RBF-fit construction. RBF-fit might be inaccurate!')
         sol = np.linalg.lstsq(M, v)[0]
 
     lam, b, a = sol[0:n], sol[n:n+d], sol[n+d]
