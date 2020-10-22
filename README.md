@@ -30,9 +30,11 @@ def fun(par):
 
 ## How do I run the procedure?
 
-Just place `blackbox.py` into your working directory. Main file should look like this:
+Just download the repository and run `python setup.py install` in order to install the blackboxfunctions module. 
+
+Then you can import it in your main file and use it like this:
 ```python
-import blackbox as bb
+import blackboxfunctions as bb
 
 
 def fun(par):
