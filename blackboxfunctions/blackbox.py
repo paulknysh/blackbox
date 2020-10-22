@@ -79,7 +79,7 @@ def search_min(f, domain, budget, batch, resfile,
     # adjusting the budget to the batch size
     if budget % batch != 0:
         budget = budget - budget % batch + batch
-        logger.info('FYI: budget was adjusted to be ' + str(budget))
+        logger.info('budget was adjusted to be ' + str(budget))
 
     # default global-vs-local assumption (50-50)
     n = budget//2
@@ -89,7 +89,7 @@ def search_min(f, domain, budget, batch, resfile,
 
     # n has to be greater than d
     if n <= d:
-        logger.error('ERROR: budget is not sufficient')
+        logger.error('budget is not sufficient')
         return
 
     # go from normalized values (unit cube) to absolute values (box)
