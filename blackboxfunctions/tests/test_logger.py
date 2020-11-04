@@ -12,10 +12,11 @@ def test_logger_info(caplog):
     with caplog.at_level(logging.DEBUG):
         for i, record in enumerate(caplog.records):
             logs += 1
+            assert record.levelno == logging.INFO
             if i == 2:
-                assert record.msg.startswith('DONE: @') 
+                assert record.message.startswith('DONE: @') 
             else:
-                assert record.msg.startswith('evaluating batch {}/2'.format(i+1))
+                assert record.message.startswith('evaluating batch {}/2'.format(i+1))
     assert logs == 3 
 
 def test_logger_notset(caplog):
@@ -37,7 +38,8 @@ def test_logger_info_budget_adgustment(caplog):
     logs = 0
     with caplog.at_level(logging.INFO):
         assert len(caplog.records) > 0
-        assert caplog.records[0].msg.startswith('budget was adjusted to be ')
+        assert caplog.records[0].levelno == logging.INFO
+        assert caplog.records[0].message.startswith('budget was adjusted to be ')
 
 def test_logger_error_insufficient_budget(caplog):
     """
@@ -48,4 +50,5 @@ def test_logger_error_insufficient_budget(caplog):
     logs = 0
     with caplog.at_level(logging.ERROR):
         assert len(caplog.records) == 1
-        assert caplog.records[0].msg.startswith('budget is not sufficient')
+        assert caplog.records[0].levelno == logging.ERROR
+        assert caplog.records[0].message.startswith('budget is not sufficient')
