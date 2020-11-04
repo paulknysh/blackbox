@@ -87,7 +87,6 @@ def search_min(f, domain, budget, batch, resfile,
     m = budget-n
 
     # n has to be greater than d
-    print(n, d)
     if n <= d:
         _LOGGER.error('budget is not sufficient')
         return
