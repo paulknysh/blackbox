@@ -18,9 +18,13 @@ Don't forget to cite this note if you are using method/code.
 
 (c) - running a procedure using 30 evaluations.
 
-## How do I represent my objective function?
+## Installation
 
-It simply needs to be wrapped into a Python function. An external application, if any, can be accessed using system call.
+`pip3 install black-box`
+
+## Objective function
+
+Simply needs to be wrapped into a Python function.
 ```python
 def fun(par):
     ...
@@ -28,11 +32,10 @@ def fun(par):
 ```
 `par` is a vector of input parameters (a Python list), `output` is a scalar value to be minimized.
 
-## How do I run the procedure?
+## Running the procedure
 
-Just place `blackbox.py` into your working directory. Main file should look like this:
 ```python
-import blackbox as bb
+import black_box as bb
 
 
 def fun(par):
@@ -52,7 +55,7 @@ best_params = bb.search_min(f = fun,  # given function
 * All function calls are divided into batches and each batch is evaluated in parallel. Total number of batches is `budget/batch`. The value of `batch` should correspond to the number of available computational units.
 * An optional parameter `executor = ...` should be specified within `bb.search_min()` in case when custom parallel engine is used (ipyparallel, dask.distributed, pathos etc). `executor` should be an object that has a `map` method.
 
-## How about results?
+## Intermediate results
 
 In addition to `search_min()` returning list of optimal parameters, all trials are sorted by function value (best ones at the top) and saved in a text file with the following structure:
 
@@ -65,7 +68,7 @@ Parameter #1 | Parameter #2 | ... | Parameter #n | Function value
 
 Paul Knysh (paul.knysh@gmail.com)
 
-I receive tons of useful feedback that helps me to improve the code. Feel free to email me if you have any questions or comments.
+Feel free to email me if you have any questions or comments.
 
 <p align="center">
   <img src="http://i.imgur.com/De7yibS.png">
