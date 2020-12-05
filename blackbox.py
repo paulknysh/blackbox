@@ -5,41 +5,9 @@ import scipy.optimize as op
 import datetime
 
 
-def get_default_executor():
-    """
-    Provide a default executor (a context manager
-    returning an object with a map method).
-
-    This is the multiprocessing Pool object () for python3.
-
-    The multiprocessing Pool in python2 does not have an __enter__
-    and __exit__ method, this function provides a backport of the python3 Pool
-    context manager.
-
-    Returns
-    -------
-    Pool : executor-like object
-        An object with context manager (__enter__, __exit__) and map method.
-    """
-    if (sys.version_info > (3, 0)):
-        Pool = mp.Pool
-        return Pool
-    else:
-        from contextlib import contextmanager
-        from functools import wraps
-
-        @wraps(mp.Pool)
-        @contextmanager
-        def Pool(*args, **kwargs):
-            pool = mp.Pool(*args, **kwargs)
-            yield pool
-            pool.terminate()
-        return Pool
-
-
 def search_min(f, domain, budget, batch, resfile,
                rho0=0.5, p=1.0,
-               executor=get_default_executor()):
+               executor=mp.Pool):
     """
     Minimize given expensive black-box function and save results into text file.
 
