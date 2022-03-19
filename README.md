@@ -66,9 +66,7 @@ Parameter #1 | Parameter #2 | ... | Parameter #n | Function value
 
 ## Author
 
-Paul Knysh (paul.knysh@gmail.com)
-
-Feel free to email me if you have any questions or comments.
+Paul Knysh
 
 <p align="center">
   <img src="http://i.imgur.com/De7yibS.png">
