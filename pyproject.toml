@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "blackbox"
+version = "1.0.3"
+description = "A Python module for parallel optimization of expensive black-box functions"
+authors = ["Paul Knysh"]
+
+[tool.poetry.dependencies]
+python = "~3.9.7"
+numpy = "^1.23.0"
+scipy = "^1.9.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^6.2.4"
+black = "^22.3"
