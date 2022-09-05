@@ -20,7 +20,9 @@ Don't forget to cite this note if you are using method/code.
 
 ## Installation
 
-`pip3 install black-box`
+Have `poetry` installed (https://python-poetry.org/docs/#installation). Then run:
+
+`poetry install`
 
 ## Objective function
 
@@ -35,38 +37,42 @@ def fun(par):
 ## Running the procedure
 
 ```python
-import black_box as bb
+import blackbox as bb
 
 
-def fun(par):
-    return par[0]**2 + par[1]**2  # dummy example
+def fun(x):
+    return (x[0] - 1) ** 2 + (x[1] - 1) ** 2
 
 
-best_params = bb.search_min(f = fun,  # given function
-                            domain = [  # ranges of each parameter
-                                [-10., 10.],
-                                [-10., 10.]
-                                ],
-                            budget = 40,  # total number of function calls available
-                            batch = 4,  # number of calls that will be evaluated in parallel
-                            resfile = 'output.csv')  # text file where results will be saved
+if __name__ == '__main__':
+    result = bb.minimize(f=fun, # given function
+        domain=[[-5, 5], [-5, 5]], # ranges of each parameter
+        budget=20, # total number of function calls available
+        batch=4 # number of calls that will be evaluated in parallel
+    )
+    # best result (x and function value)
+    print(result["best_x"])
+    print(result["best_f"])
+
+    # the entire history of evaluations
+    # print(result["all_xs"])
+    # print(result["all_fs"])
 ```
 **Important:**
 * All function calls are divided into batches and each batch is evaluated in parallel. Total number of batches is `budget/batch`. The value of `batch` should correspond to the number of available computational units.
-* An optional parameter `executor = ...` should be specified within `bb.search_min()` in case when custom parallel engine is used (ipyparallel, dask.distributed, pathos etc). `executor` should be an object that has a `map` method.
+* An optional parameter `executor = ...` should be specified within `bb.minimize()` in case when custom parallel engine is used (ipyparallel, dask.distributed, pathos etc). `executor` should be an object that has a `map` method.
 
-## Intermediate results
+## Results
 
-In addition to `search_min()` returning list of optimal parameters, all trials are sorted by function value (best ones at the top) and saved in a text file with the following structure:
-
-Parameter #1 | Parameter #2 | ... | Parameter #n | Function value
---- | --- | --- | --- | ---
-+1.6355e+01 | -4.7364e+03 | ... | +6.4012e+00 | +1.1937e-04
-... | ... | ... | ... | ...
+`bb.minimize()` returns a dictionary with the following keys:
+- `"best_x"` - best iteration
+- `"best_f"` - corresponding function value
+- `"all_xs"` - all iterations
+- `"all_fs"` - corresponding function values
 
 ## Author
 
-Paul Knysh
+Paul Knysh (paul.knysh at gmail dot com)
 
 <p align="center">
   <img src="http://i.imgur.com/De7yibS.png">
