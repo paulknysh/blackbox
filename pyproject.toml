@@ -7,7 +7,7 @@ authors = ["Paul Knysh"]
 [tool.poetry.dependencies]
 python = "~3.9.7"
 numpy = "^1.23.0"
-scipy = "^1.9.0"
+scipy = "^1.10.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^6.2.4"
