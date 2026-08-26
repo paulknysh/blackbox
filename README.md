@@ -10,7 +10,7 @@ Don't forget to cite this note if you are using method/code.
 
 ## Demo
 
-<img src="http://i.imgur.com/kkagLKR.png">
+<img src="https://i.imgur.com/kkagLKR.png">
 
 (a) - demo function (unknown to a method).
 
@@ -22,11 +22,23 @@ Don't forget to cite this note if you are using method/code.
 
 To install locally run either:
 
-`poetry install`
+`uv sync --extra dev`
 
 or
 
-`pip install .`
+`pip install ".[dev]"`
+
+## Testing, linting, and formatting
+
+Run the following from the repository root:
+
+```bash
+uv run pytest -q
+uv run ruff check .
+uv run ruff format .
+```
+
+CI also runs these steps automatically on every push and pull request (with `ruff format --check` instead of `ruff format`).
 
 ## Objective function
 
@@ -48,11 +60,12 @@ def fun(x):
     return (x[0] - 1) ** 2 + (x[1] - 1) ** 2
 
 
-if __name__ == '__main__':
-    result = bb.minimize(f=fun, # given function
-        domain=[[-5, 5], [-5, 5]], # ranges of each parameter
-        budget=20, # total number of function calls available
-        batch=4 # number of calls that will be evaluated in parallel
+if __name__ == "__main__":
+    result = bb.minimize(
+        f=fun,  # given function
+        domain=[[-5, 5], [-5, 5]],  # ranges of each parameter
+        budget=20,  # total number of function calls available
+        batch=4,  # number of calls that will be evaluated in parallel
     )
     # best result (x and function value)
     print(result["best_x"])
@@ -63,8 +76,9 @@ if __name__ == '__main__':
     # print(result["all_fs"])
 ```
 **Important:**
-* All function calls are divided into batches and each batch is evaluated in parallel. Total number of batches is `budget/batch`. The value of `batch` should correspond to the number of available computational units.
-* An optional parameter `executor = ...` should be specified within `bb.minimize()` in case when custom parallel engine is used (ipyparallel, dask.distributed, pathos etc). `executor` should be an object that has a `map` method.
+* All function calls are divided into batches and each batch is evaluated in parallel. Total number of batches is `ceil(budget/batch)` (the budget is automatically rounded up to a multiple of `batch`). The value of `batch` should correspond to the number of available computational units.
+* An optional parameter `executor = ...` should be specified within `bb.minimize()` in case when custom parallel engine is used (ipyparallel, dask.distributed, pathos etc). `executor` must be a **callable** (e.g. a class or factory) that, when called with no arguments, returns a context-managing object exposing a `map` method (it is invoked as `with executor() as e:`). The default is `multiprocessing.Pool`.
+* The default `executor` is `multiprocessing.Pool`, which pickles the objective function `f` to send it to workers. This means `f` must be picklable: a `lambda` or a closure defined in a REPL/notebook will raise a `PicklingError`. Use a top-level function (as in the example above) or pass a custom serial executor / `dask`/`ipyparallel` executor that avoids pickling.
 
 ## Results
 
@@ -74,10 +88,6 @@ if __name__ == '__main__':
 - `"all_xs"` - all iterations
 - `"all_fs"` - corresponding function values
 
-## Author
+## License
 
-Paul Knysh (paul.knysh at gmail dot com)
-
-<p align="center">
-  <img src="http://i.imgur.com/De7yibS.png">
-</p>
+MIT

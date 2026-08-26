@@ -1,9 +1,10 @@
+import logging
+import math
 import multiprocessing as mp
+from collections.abc import Callable
+
 import numpy as np
 import scipy.optimize as op
-import logging
-from typing import Callable
-
 
 logging.basicConfig(
     format="%(levelname)-8s %(message)s %(asctime)s", datefmt="%m-%d %H:%M:%S"
@@ -20,6 +21,7 @@ def minimize(
     rho0: float = 0.5,
     p: float = 1.0,
     executor: Callable = mp.Pool,
+    random_seed: int = 0,
 ) -> dict:
     """Minimize given expensive black-box function
 
@@ -31,6 +33,7 @@ def minimize(
         rho0 (float, optional): initial "balls density". Defaults to 0.5
         p (float, optional): rate of "balls density" decay (p=1 - linear, p>1 - faster, 0<p<1 - slower). Defaults to 1.0
         executor (Callable, optional): should have a map method and behave as a context manager. Defaults to mp.Pool
+        random_seed (int, optional): seed for random number generator to make runs reproducible. Defaults to 0
 
     Returns:
         dict: a dictionary with results. Contains the following keys:
@@ -41,6 +44,9 @@ def minimize(
     """
     # space size
     d = len(domain)
+
+    # fixing random seed for reproducibility
+    np.random.seed(random_seed)
 
     # adjusting the budget to the batch size
     if budget % batch != 0:
@@ -56,7 +62,7 @@ def minimize(
     # n has to be greater than d
     if n <= d:
         logger.error("budget is not sufficient")
-        return
+        return {}
 
     # go from normalized values (unit cube) to absolute values (box)
     def cubetobox(x):
@@ -69,7 +75,7 @@ def minimize(
     # initial sampling
     for i in range(n // batch):
         logger.info(
-            f"evaluating batch {i+1}/{(n+m)//batch} (samples {i*batch+1}..{(i+1)*batch}/{n+m})"
+            f"evaluating batch {i + 1}/{(n + m) // batch} (samples {i * batch + 1}..{(i + 1) * batch}/{n + m})"
         )
 
         with executor() as e:
@@ -88,7 +94,7 @@ def minimize(
     # subsequent iterations (current subsequent iteration = i*batch+j)
     for i in range(m // batch):
         logger.info(
-            f"evaluating batch {n//batch+i+1}/{(n+m)//batch} (samples {n+i*batch+1}..{n+(i+1)*batch}/{n+m})"
+            f"evaluating batch {n // batch + i + 1}/{(n + m) // batch} (samples {n + i * batch + 1}..{n + (i + 1) * batch}/{n + m})"
         )
 
         # sampling next batch of points
@@ -103,10 +109,10 @@ def minimize(
             constraints = [
                 {
                     "type": "ineq",
-                    "fun": lambda x, localk=k: np.linalg.norm(
-                        np.subtract(x, points[localk, 0:-1])
-                    )
-                    - r,
+                    "fun": lambda x, localk=k, localpoints=points, localr=r: (
+                        np.linalg.norm(np.subtract(x, localpoints[localk, 0:-1]))
+                        - localr
+                    ),
                 }
                 for k in range(n + i * batch + j)
             ]
@@ -118,7 +124,7 @@ def minimize(
                     bounds=[[0.0, 1.0]] * d,
                     constraints=constraints,
                 )
-                if np.isnan(minfit.x)[0] == False:
+                if not np.any(np.isnan(minfit.x)):
                     break
             points[n + i * batch + j, 0:-1] = np.copy(minfit.x)
 
@@ -162,13 +168,13 @@ def compute_volume_unit_ball(d: int) -> float:
         float: volume
     """
     if d % 2 == 0:
-        v1 = np.pi ** (d / 2) / np.math.factorial(d // 2)
+        v1 = np.pi ** (d / 2) / math.factorial(d // 2)
     else:
         v1 = (
             2
             * (4 * np.pi) ** ((d - 1) / 2)
-            * np.math.factorial((d - 1) // 2)
-            / np.math.factorial(d)
+            * math.factorial((d - 1) // 2)
+            / math.factorial(d)
         )
     return v1
 
@@ -233,7 +239,7 @@ def build_rbf(points: np.ndarray) -> Callable:
 
     try:
         sol = np.linalg.solve(m, v)
-    except:
+    except np.linalg.LinAlgError:
         # helps with singular matrices
         logger.warning(
             "Singular matrix occurred during RBF-fit construction. RBF-fit might be inaccurate!"
