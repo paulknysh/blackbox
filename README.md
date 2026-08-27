@@ -22,20 +22,22 @@ Don't forget to cite this note if you are using method/code.
 
 To install locally run either:
 
-`uv sync --extra dev`
+```bash
+uv sync
+```
 
 or
 
-`pip install ".[dev]"`
+```bash
+pip install -e .
+```
 
 ## Testing, linting, and formatting
 
-Run the following from the repository root:
+All done in one command:
 
 ```bash
-uv run pytest -q
-uv run ruff check .
-uv run ruff format .
+make sure
 ```
 
 CI also runs these steps automatically on every push and pull request (with `ruff format --check` instead of `ruff format`).
