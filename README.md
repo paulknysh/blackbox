@@ -20,27 +20,31 @@ Don't forget to cite this note if you are using method/code.
 
 ## Installation
 
-To install locally run either:
+You can install it with `uv` (run `uv init` first if you don't have an existing project yet):
 
 ```bash
-uv sync
+uv add git+https://github.com/paulknysh/blackbox
 ```
 
-or
+or, with `pip`, into a virtual environment:
 
 ```bash
-pip install -e .
+python3 -m venv .venv
+source .venv/bin/activate
+pip install git+https://github.com/paulknysh/blackbox
 ```
 
-## Testing, linting, and formatting
+## Development
 
-All done in one command:
+To work on blackbox itself, clone the repo and run `uv sync`. Testing, linting, and formatting are done in one command:
 
 ```bash
 make sure
 ```
 
-CI also runs these steps automatically on every push and pull request (with `ruff format --check` instead of `ruff format`).
+CI runs these steps automatically on every push and pull request (with
+`ruff format --check` instead of `ruff format`).
+
 
 ## Objective function
 
